@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор транспозиции смешанного астигматизма</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E6E7C">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Астигматизм">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F8F9;
+    --surface:#FFFFFF;
+    --border:#DCE3E6;
+    --ink:#17262E;
+    --ink-soft:#5C707A;
+    --accent:#0E6E7C;
+    --accent-soft:#E4F1F2;
+    --success:#2F7A52;
+    --success-bg:#EAF5EE;
+    --danger:#B3463F;
+    --danger-bg:#FBEEED;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:520px;
+    margin:0 auto;
+    padding:32px 20px 60px;
+  }
+  header{
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    font-size:13px;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:22px;
+    line-height:1.35;
+    font-weight:700;
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    line-height:1.5;
+    margin:0;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:16px;
+  }
+  .field{
+    margin-bottom:18px;
+  }
+  .field:last-of-type{
+    margin-bottom:0;
+  }
+  label{
+    display:block;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+  .input-row{
+    display:flex;
+    align-items:center;
+    border:1px solid var(--border);
+    border-radius:9px;
+    overflow:hidden;
+    transition:border-color .15s ease;
+  }
+  .input-row:focus-within{
+    border-color:var(--accent);
+  }
+  input[type=number]{
+    flex:1;
+    border:none;
+    outline:none;
+    padding:11px 12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    font-weight:500;
+    color:var(--ink);
+    background:transparent;
+    width:100%;
+    -moz-appearance:textfield;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .unit{
+    padding:0 12px;
+    font-size:13px;
+    color:var(--ink-soft);
+    border-left:1px solid var(--border);
+    align-self:stretch;
+    display:flex;
+    align-items:center;
+    white-space:nowrap;
+  }
+  button{
+    width:100%;
+    margin-top:20px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    padding:13px;
+    font-family:inherit;
+    font-size:15.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  button:hover{ background:#0B5A66; }
+  button:active{ transform:translateY(1px); }
+
+  .criteria{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+  }
+  .criteria b{ color:var(--ink); font-weight:600; }
+
+  #result{ display:none; }
+  #result.show{ display:block; }
+
+  .banner{
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:14.5px;
+    font-weight:600;
+    margin-bottom:14px;
+    line-height:1.4;
+  }
+  .banner.ok{ background:var(--success-bg); color:var(--success); }
+  .banner.fail{ background:var(--danger-bg); color:var(--danger); }
+  .fail-line{
+    font-size:13.5px;
+    font-weight:500;
+    margin-top:6px;
+  }
+
+  .metrics{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+  }
+  .metric{
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:14px 8px;
+    text-align:center;
+  }
+  .metric .m-label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+    margin-bottom:6px;
+  }
+  .metric .m-value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:19px;
+    font-weight:600;
+    color:var(--accent);
+  }
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:24px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Рефракционная лазерная хирургия</p>
+    <h1>Калькулятор транспозиции смешанного астигматизма</h1>
+    <p class="sub">Для фемтосекундной лентикулярной технологии. Введите исходные рефракционные параметры, чтобы проверить критерии отбора и получить транспонированные значения.</p>
+  </header>
+
+  <div class="card">
+    <div class="field">
+      <label for="sph">Sph — сферический компонент</label>
+      <div class="input-row">
+        <input type="number" id="sph" step="0.01" value="0">
+        <span class="unit">дптр</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="cyl">Cyl — цилиндрический компонент</label>
+      <div class="input-row">
+        <input type="number" id="cyl" step="0.01" value="0">
+        <span class="unit">дптр</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="ax">Ax — ось цилиндра</label>
+      <div class="input-row">
+        <input type="number" id="ax" step="1" min="0" max="180" value="0">
+        <span class="unit">градусы</span>
+      </div>
+    </div>
+
+    <button onclick="calculate()">Рассчитать</button>
+
+    <div class="criteria">
+      <b>Критерии отбора:</b> сферический эквивалент ≤ –0,75 дптр · сфера ≤ +1,75 дптр · цилиндр ≥ –5,00 дптр
+    </div>
+  </div>
+
+  <div class="card" id="result">
+    <div id="banner-area"></div>
+    <div id="metrics-area"></div>
+  </div>
+
+  <footer>Инструмент для внутреннего клинического использования. Не заменяет врачебную оценку.</footer>
+</div>
+
+<script>
+function calculate(){
+  const sph = parseFloat(document.getElementById('sph').value) || 0;
+  const cyl = parseFloat(document.getElementById('cyl').value) || 0;
+  const ax = parseFloat(document.getElementById('ax').value) || 0;
+
+  const SE = sph + cyl * 0.5;
+  const seOk = SE <= -0.75;
+  const sphOk = sph <= 1.75;
+  const cylOk = cyl >= -5.00;
+
+  const result = document.getElementById('result');
+  const bannerArea = document.getElementById('banner-area');
+  const metricsArea = document.getElementById('metrics-area');
+  result.classList.add('show');
+
+  if(seOk && sphOk && cylOk){
+    const newSph = sph + cyl;
+    const newCyl = -cyl;
+    const newAx = ax <= 90 ? ax + 90 : ax - 90;
+
+    bannerArea.innerHTML = `<div class="banner ok">Допуск к оперативному вмешательству возможен</div>`;
+    metricsArea.innerHTML = `
+      <div class="metrics">
+        <div class="metric"><div class="m-label">Sph, дптр</div><div class="m-value">${newSph.toFixed(2)}</div></div>
+        <div class="metric"><div class="m-label">Cyl, дптр</div><div class="m-value">${newCyl.toFixed(2)}</div></div>
+        <div class="metric"><div class="m-label">Ax, °</div><div class="m-value">${newAx}</div></div>
+      </div>`;
+  } else {
+    let lines = '';
+    if(!seOk) lines += `<div class="fail-line">Сферический эквивалент более –0,75 дптр (SE = ${SE.toFixed(2)})</div>`;
+    if(!sphOk) lines += `<div class="fail-line">Сфера более +1,75 дптр</div>`;
+    if(!cylOk) lines += `<div class="fail-line">Цилиндр менее –5,00 дптр</div>`;
+
+    bannerArea.innerHTML = `<div class="banner fail">Пациент не соответствует критериям отбора${lines}</div>`;
+    metricsArea.innerHTML = '';
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
