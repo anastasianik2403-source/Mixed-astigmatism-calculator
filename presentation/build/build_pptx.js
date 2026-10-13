@@ -15,14 +15,14 @@ const COL = { text: "0B1A6B", muted: "5B6795", accent: "1736D9", white: "FFFFFF"
 function runs(t, c, opts) {
   const acc = c === "white" ? "BFD0FF" : COL.accent;
   const out = [];
-  t.split("\n").forEach((line, li, arr) => {
+  t.replace(/\{\*\}/g, "\u0001").split("\n").forEach((line, li, arr) => {
     const parts = line.split(/(\*[^*]+\*)/).filter(Boolean);
     if (!parts.length) parts.push(" ");
     parts.forEach((p, pi) => {
       const isAcc = p.startsWith("*") && p.endsWith("*");
       const o = Object.assign({}, opts, { color: isAcc ? acc : COL[c] });
       if (pi === parts.length - 1 && li < arr.length - 1) o.breakLine = true;
-      out.push({ text: isAcc ? p.slice(1, -1) : p, options: o });
+      out.push({ text: (isAcc ? p.slice(1, -1) : p).replace(/\u0001/g, "*"), options: o });
     });
   });
   return out;
@@ -30,7 +30,7 @@ function runs(t, c, opts) {
 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE";
-pres.title = "Лентикулярная коррекция смешанного астигматизма";
+pres.title = "Современный подход к хирургической коррекции смешанного астигматизма";
 pres.author = "Никитина А.Е.";
 
 for (const sd of S) {
@@ -56,7 +56,7 @@ for (const sd of S) {
       }
       case "pill": {
         const on = e.v === "onsolid";
-        sl.addText(e.t, { x: box.x, y: box.y, w: IN(e.w), h: IN(e.h), shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: IN(22),
+        sl.addText(e.t, { x: box.x, y: box.y, w: IN(e.w) * 1.12, h: IN(e.h), shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: IN(22),
           fill: on ? { color: "FFFFFF", transparency: 84 } : { color: "EEF2FD" }, line: { type: "none" },
           fontFace: FONT, fontSize: PT(21), bold: true, color: on ? "FFFFFF" : COL.muted, margin: [0, IN(22), 0, IN(22)], valign: "middle" });
         break;
@@ -77,7 +77,7 @@ for (const sd of S) {
       case "table": {
         const rh = IN(e.h / e.rows.length);
         const rows = e.rows.map((r, ri) => r.map((cell, ci) => ({
-          text: cell, options: {
+          text: runs(cell, ci === 0 ? "muted" : "text", { fontFace: FONT, fontSize: PT(e.s), bold: ci > 0 }), options: {
             fontFace: FONT, fontSize: PT(e.s), bold: ri === 0 && r[0] === "" ? true : ci > 0,
             color: ri === 0 && r[0] === "" ? COL.accent : ci === 0 ? COL.muted : COL.text, valign: "middle",
             border: [{ type: "none" }, { type: "none" }, ri === e.rows.length - 1 ? { type: "none" } : { type: "solid", color: "E1E7F6", pt: 1 }, { type: "none" }],
@@ -121,4 +121,4 @@ for (const sd of S) {
   if (sd.notes) sl.addNotes(sd.notes);
 }
 
-pres.writeFile({ fileName: path.join(ROOT, "Лентикулярная_коррекция_смешанного_астигматизма.pptx") }).then((f) => console.log("written", f));
+pres.writeFile({ fileName: path.join(ROOT, "Коррекция_смешанного_астигматизма_новый_дизайн.pptx") }).then((f) => console.log("written", f));

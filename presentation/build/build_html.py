@@ -11,9 +11,9 @@ COL = dict(text="#0B1A6B", muted="#5B6795", accent="#1736D9", white="#FFFFFF", g
 def rich(t, color):
     """*word* -> accent span; newline -> <br>."""
     acc = "#BFD0FF" if color == "white" else COL["accent"]
-    out = html.escape(t)
+    out = html.escape(t.replace("{*}", "\u0001"))
     out = re.sub(r"\*(.+?)\*", lambda m: f'<span style="color:{acc}">{m.group(1)}</span>', out)
-    return out.replace("\n", "<br>")
+    return out.replace("\u0001", "*").replace("\n", "<br>")
 
 def fmt(v, f):
     s = f"{v:.0f}" if f == "0" else f"{v:.2f}"
@@ -199,7 +199,7 @@ def build():
         body.append(f'<section class="slide" data-n="{i+1}"><!-- {html.escape(s.get("notes",""))} -->' + "".join(el(e) for e in s["els"]) + "</section>")
     doc = f"""<!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Лентикулярная коррекция смешанного астигматизма</title>
+<title>Коррекция смешанного астигматизма</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
