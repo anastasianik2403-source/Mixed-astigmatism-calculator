@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кобальтовая волна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === TOKENS: palette taken from reference #1 (cobalt / navy / ice) === */
+:root{
+  --ink:#06103A; --navy:#0B1F6E; --cobalt:#1F44D6; --electric:#3D6BFF; --sky:#8FB2FF;
+  --ice:#EEF3FF; --paper:#FFFFFF; --text:#0B1440; --muted:#5A6690;
+  --display:'Unbounded',sans-serif; --body:'Manrope',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0f24;font-family:var(--body);color:var(--text);padding:40px 0;display:flex;flex-direction:column;align-items:center;gap:40px}
+.frame{width:min(1600px,94vw);aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+
+/* === TITLE SLIDE === */
+.t{background:radial-gradient(120% 140% at 85% 40%,#1a3bc4 0%,#0B1F6E 38%,#06103A 75%);color:#fff}
+.t svg.wave{position:absolute;right:-180px;top:-120px;width:1400px;height:1320px;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 35%);mask-image:linear-gradient(90deg,transparent 0%,#000 35%)}
+.t .chip{position:absolute;left:120px;top:110px;display:flex;gap:18px;align-items:center;padding:20px 30px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(255,255,255,.06);backdrop-filter:blur(12px);font-size:24px;color:#cfdaff}
+.t .chip b{color:#fff;font-weight:600;display:block}
+.t .dot{width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);display:grid;place-items:center}
+.t h1{position:absolute;left:120px;top:300px;font-family:var(--display);font-weight:700;font-size:80px;line-height:1.02;letter-spacing:-.02em;text-transform:uppercase;max-width:1100px}
+.t h1 em{font-style:normal;color:var(--sky)}
+.t .lead{position:absolute;left:120px;top:700px;font-size:34px;line-height:1.35;color:#d6e0ff;max-width:860px}
+.t .meta{position:absolute;left:120px;bottom:96px;font-size:24px;color:#aebdf0;line-height:1.5}
+.t .meta b{color:#fff;font-weight:600}
+.t .badge{position:absolute;right:0;top:80px;background:#fff;color:var(--navy);padding:34px 56px;border-radius:24px 0 0 24px;font-weight:700;font-size:26px;letter-spacing:.02em}
+
+/* === CONTENT SLIDE: navy rail + white bento === */
+.c{background:var(--paper)}
+.rail{position:absolute;left:0;top:0;bottom:0;width:360px;background:linear-gradient(180deg,#0B1F6E,#06103A);padding:70px 0 0 0;color:#9fb0e6;font-size:21px;overflow:hidden}
+.rail .logo{margin:0 0 60px 56px;width:72px;height:72px;border-radius:50%;background:#fff;display:grid;place-items:center;color:var(--navy);font-family:var(--display);font-size:22px;font-weight:700}
+.rail li{list-style:none;padding:18px 56px;display:flex;gap:16px;align-items:center}
+.rail li::before{content:"";width:8px;height:8px;border-radius:50%;background:#4a5fa8}
+.rail li.on{background:#fff;color:var(--navy);font-weight:700;border-radius:0 40px 40px 0;margin-right:40px}
+.rail li.on::before{background:var(--cobalt)}
+.rail svg{position:absolute;bottom:-60px;left:-80px;width:520px;height:420px;opacity:.9}
+.c .head{position:absolute;left:440px;top:80px}
+.c h2{font-family:var(--display);font-size:64px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
+.c .sub{font-size:28px;color:var(--muted);margin-top:14px}
+.c .pager{position:absolute;right:80px;top:96px;font-size:22px;color:var(--muted);border:1px solid #dbe3f7;border-radius:30px;padding:8px 20px}
+.grid{position:absolute;left:440px;right:80px;top:300px;bottom:80px;display:grid;grid-template-columns:1.25fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:28px}
+.card{border-radius:28px;padding:40px;background:var(--ice);position:relative;overflow:hidden}
+.card.big{grid-row:span 2;background:linear-gradient(160deg,#1F44D6,#0B1F6E);color:#fff}
+.num{font-family:var(--display);font-weight:700;font-size:120px;letter-spacing:-.04em;line-height:1}
+.card.big .num{font-size:150px}
+.lbl{font-size:26px;line-height:1.35;margin-top:18px;color:var(--muted)}
+.card.big .lbl{color:#c8d5ff;font-size:30px}
+.card .arrow{font-size:44px;color:var(--cobalt);font-family:var(--display);font-weight:500}
+.vs{position:absolute;right:40px;bottom:36px;font-size:22px;color:#8a95bd}
+.card.big .vs{color:#9fb3f5}
+
+/* entrance */
+.reveal{opacity:0;transform:translateY(24px);animation:in .9s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes in{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="frame"><div class="stage t">
+  <svg class="wave" viewBox="0 0 1400 1320" id="waveA"></svg>
+  <div class="chip reveal"><span class="dot"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><ellipse cx="12" cy="12" rx="10" ry="6"/><circle cx="12" cy="12" r="3"/></svg></span><span><b>Катаракта 2026</b>Москва, 2–4 сентября</span></div>
+  <div class="badge">РосУниМед · МНТК</div>
+  <h1 class="reveal" style="animation-delay:.15s">Лентикулярная<br>коррекция <em>смешанного</em><br>астигматизма</h1>
+  <p class="lead reveal" style="animation-delay:.3s">Новый способ планирования операции SMILE, когда одна ось глаза близорукая, а другая — дальнозоркая</p>
+  <p class="meta reveal" style="animation-delay:.45s"><b>Никитина А.Е.</b> · Костенев С.В., Макаров Р.А., Садрутдинов Р.Ш.</p>
+</div></div>
+
+<div class="frame"><div class="stage c">
+  <aside class="rail">
+    <div class="logo">Л</div>
+    <ul><li>Зачем это нужно</li><li>Методика</li><li>Пациенты</li><li class="on">Результаты</li><li>Выводы</li></ul>
+    <svg viewBox="0 0 520 420" id="waveA2"></svg>
+  </aside>
+  <div class="head reveal"><h2>Цилиндр почти исчез</h2><p class="sub">Через 6 месяцев после SMILE остаточный цилиндр в 2 раза меньше, чем после ФемтоЛАЗИК</p></div>
+  <div class="pager">14 / 24</div>
+  <div class="grid">
+    <div class="card big reveal" style="animation-delay:.1s"><div class="num">−0,62</div><div class="lbl">дптр — средний цилиндр через 6 мес. после лентикулярной коррекции</div><div class="vs">до операции −3,07</div></div>
+    <div class="card reveal" style="animation-delay:.2s"><div class="num">1,03</div><div class="lbl">индекс безопасности, SMILE</div><div class="vs">ФемтоЛАЗИК 1,02</div></div>
+    <div class="card reveal" style="animation-delay:.3s"><div class="num">74%</div><div class="lbl">глаз в пределах ±0,5 дптр от плана</div></div>
+    <div class="card reveal" style="animation-delay:.4s"><div class="arrow">0,34 → 0,88</div><div class="lbl">острота зрения без очков (НКОЗ), 3 мес.</div></div>
+    <div class="card reveal" style="animation-delay:.5s"><div class="arrow">0,91 → 1,0</div><div class="lbl">острота зрения в очках (МКОЗ) не снизилась</div></div>
+  </div>
+</div></div>
+
+<script>
+/* === GLOSSY RIBBED WAVE (echoes the 3D render from reference #1) === */
+function wave(id,w,h,n,amp,phase){
+  const svg=document.getElementById(id), ns='http://www.w3.org/2000/svg';
+  svg.innerHTML='<defs><linearGradient id="g'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a1a66"/><stop offset=".45" stop-color="#2f5bff"/><stop offset=".6" stop-color="#bcd0ff"/><stop offset=".75" stop-color="#2f5bff"/><stop offset="1" stop-color="#081450"/></linearGradient><filter id="f'+id+'"><feGaussianBlur stdDeviation="1.2"/></filter></defs>';
+  for(let i=0;i<n;i++){
+    const t=i/n, p=document.createElementNS(ns,'path');
+    let d='';
+    for(let x=0;x<=w;x+=20){
+      const y=h*0.15+t*h*0.8+Math.sin(x/w*Math.PI*1.6+t*3+phase)*amp*(0.4+t)+Math.cos(x/w*Math.PI*0.7+t*5)*amp*0.5;
+      d+=(x?'L':'M')+x+' '+y.toFixed(1);
+    }
+    p.setAttribute('d',d);p.setAttribute('fill','none');
+    p.setAttribute('stroke','url(#g'+id+')');p.setAttribute('stroke-width',(w/n*0.9).toFixed(1));
+    p.setAttribute('opacity',(0.35+0.65*Math.sin(t*Math.PI)).toFixed(2));p.setAttribute('filter','url(#f'+id+')');
+    svg.appendChild(p);
+  }
+}
+wave('waveA',1400,1320,70,160,0); wave('waveA2',520,420,26,60,1);
+/* scale stages to frame */
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.querySelector('.stage').style.transform='scale('+f.clientWidth/1920+')'})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

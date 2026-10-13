@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Научный журнал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* === TOKENS: navy/cobalt ink on paper, journal grid === */
+:root{
+  --paper:#F6F7FB; --ink:#0A1440; --navy:#0B1F6E; --cobalt:#1F44D6; --rule:#C9D1E6; --muted:#5B6688; --pale:#E3E9F8;
+  --serif:'Literata',serif; --sans:'Golos Text',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1b2242;font-family:var(--sans);color:var(--ink);padding:40px 0;display:flex;flex-direction:column;align-items:center;gap:40px}
+.frame{width:min(1600px,94vw);aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:var(--paper)}
+.run{position:absolute;left:100px;right:100px;top:56px;display:flex;justify-content:space-between;font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-bottom:18px;border-bottom:1.5px solid var(--ink)}
+
+/* === TITLE: journal-cover split === */
+.t .big{position:absolute;left:92px;top:150px;font-family:var(--serif);font-weight:400;font-size:330px;line-height:1;color:var(--pale);letter-spacing:-.04em}
+.t h1{position:absolute;left:100px;top:290px;font-family:var(--serif);font-weight:600;font-size:80px;line-height:1.04;letter-spacing:-.02em;max-width:980px}
+.t h1 i{color:var(--cobalt);font-weight:400}
+.t .lead{position:absolute;left:100px;top:720px;font-size:30px;line-height:1.45;color:#2d3863;max-width:820px}
+.t .who{position:absolute;left:100px;bottom:70px;right:100px;display:flex;gap:60px;font-size:21px;color:var(--muted);border-top:1px solid var(--rule);padding-top:22px}
+.t .who b{display:block;color:var(--ink);font-weight:600;font-size:23px}
+.t .plate{position:absolute;right:0;top:110px;bottom:150px;width:760px;background:var(--navy);overflow:hidden}
+.t .plate img{position:absolute;inset:40px;width:calc(100% - 80px);height:calc(100% - 80px);object-fit:contain;mix-blend-mode:screen;filter:invert(1) hue-rotate(180deg) saturate(1.4)}
+.t .cap{position:absolute;right:40px;bottom:170px;color:#b9c7f5;font-size:19px;letter-spacing:.06em;text-align:right}
+
+/* === CONTENT: numbered findings on a ruled grid === */
+.c h2{position:absolute;left:100px;top:130px;font-family:var(--serif);font-weight:600;font-size:66px;letter-spacing:-.02em;max-width:1200px;line-height:1.08}
+.c .note{position:absolute;right:100px;top:150px;width:420px;font-size:22px;line-height:1.45;color:var(--muted);border-left:3px solid var(--cobalt);padding-left:22px}
+.cols{position:absolute;left:100px;right:100px;top:420px;bottom:90px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1.5px solid var(--ink)}
+.col{padding:34px 34px 0 0;border-right:1px solid var(--rule);margin-right:34px;position:relative}
+.col:last-child{border-right:0;margin-right:0}
+.col .i{font-size:19px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.col .v{font-family:var(--serif);font-size:116px;font-weight:400;letter-spacing:-.04em;color:var(--navy);line-height:1;margin:30px 0 20px}
+.col .v.hl{color:var(--cobalt);font-weight:600}
+.col p{font-size:24px;line-height:1.4;color:#2d3863}
+.col .cmp{position:absolute;bottom:0;left:0;right:34px;padding-top:16px;border-top:1px dashed var(--rule);font-size:20px;color:var(--muted)}
+
+.reveal{opacity:0;transform:translateY(18px);animation:in .9s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes in{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="frame"><div class="stage t">
+  <div class="run"><span>Катаракта 2026 · Москва</span><span>Рефракционная хирургия</span></div>
+  <div class="big reveal">SMILE</div>
+  <h1 class="reveal" style="animation-delay:.15s">Лентикулярная коррекция <i>смешанного</i> астигматизма</h1>
+  <p class="lead reveal" style="animation-delay:.3s">Новый протокол расчёта: одна операция SMILE исправляет и близорукую, и дальнозоркую ось глаза</p>
+  <div class="who reveal" style="animation-delay:.45s"><span><b>Никитина А.Е.</b>докладчик</span><span><b>Костенев С.В.</b>научный руководитель, д.м.н.</span><span><b>Макаров Р.А., Садрутдинов Р.Ш.</b>соавторы</span></div>
+  <div class="plate"><img src="../../presentation/assets/lenticule-map.jpg" alt="Карта толщины лентикулы"></div>
+  <div class="cap">Карта толщины лентикулы · рис. 1</div>
+</div></div>
+
+<div class="frame"><div class="stage c">
+  <div class="run"><span>Результаты · 6 месяцев</span><span>14 / 24</span></div>
+  <h2 class="reveal">SMILE не уступает ФемтоЛАЗИК, а цилиндр убирает лучше</h2>
+  <p class="note reveal" style="animation-delay:.15s">Две группы по 40 глаз. Наблюдение: 1 сутки, 3 и 6 месяцев.</p>
+  <div class="cols">
+    <div class="col reveal" style="animation-delay:.2s"><span class="i">Эффективность</span><div class="v">0,88</div><p>острота зрения без очков через 3 мес. (было 0,34)</p><div class="cmp">ФемтоЛАЗИК — 0,75</div></div>
+    <div class="col reveal" style="animation-delay:.3s"><span class="i">Безопасность</span><div class="v">1,03</div><p>индекс безопасности: зрение в очках не ухудшилось</p><div class="cmp">ФемтоЛАЗИК — 1,02</div></div>
+    <div class="col reveal" style="animation-delay:.4s"><span class="i">Прогнозируемость</span><div class="v">74%</div><p>глаз попали в ±0,5 дптр от запланированной коррекции</p><div class="cmp">±1,0 дптр — 88%</div></div>
+    <div class="col reveal" style="animation-delay:.5s"><span class="i">Цилиндр</span><div class="v hl">−0,62</div><p>дптр остаточного цилиндра (было −3,07)</p><div class="cmp">ФемтоЛАЗИК — −1,25</div></div>
+  </div>
+</div></div>
+
+<script>
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.querySelector('.stage').style.transform='scale('+f.clientWidth/1920+')'})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

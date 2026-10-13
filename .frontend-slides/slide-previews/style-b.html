@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ледяное стекло</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === TOKENS: cobalt palette (ref #1) on frosted-glass bento (ref #2) === */
+:root{
+  --bg1:#E4EAF6; --bg2:#C9D5EE; --glass:rgba(255,255,255,.55); --glass-b:rgba(255,255,255,.85);
+  --navy:#0B1F6E; --cobalt:#1F44D6; --electric:#3D6BFF; --text:#0E1A45; --muted:#5D6A92;
+  --font:'Onest',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#cfd8ea;font-family:var(--font);color:var(--text);padding:40px 0;display:flex;flex-direction:column;align-items:center;gap:40px}
+.frame{width:min(1600px,94vw);aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:6px;box-shadow:0 30px 80px rgba(20,40,100,.25)}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
+  background:radial-gradient(60% 70% at 78% 45%,#ffffff 0%,rgba(255,255,255,0) 60%),radial-gradient(50% 60% at 20% 90%,#b8c8f0 0%,rgba(184,200,240,0) 70%),linear-gradient(160deg,var(--bg1),var(--bg2))}
+.glass{background:var(--glass);border:1.5px solid var(--glass-b);border-radius:32px;backdrop-filter:blur(18px);box-shadow:0 20px 60px rgba(30,60,140,.10),inset 0 1px 0 #fff}
+
+/* === TITLE: one hero card, object right, date top-right (ref #2 top card) === */
+.hero{position:absolute;inset:60px}
+.hero .date{position:absolute;right:56px;top:46px;font-size:22px;color:var(--muted)}
+.hero .ev{position:absolute;left:80px;top:46px;font-size:22px;color:var(--muted);letter-spacing:.04em}
+.hero .ev b{color:var(--cobalt)}
+.hero h1{position:absolute;left:80px;top:210px;font-weight:700;font-size:80px;line-height:1.02;letter-spacing:-.035em;color:var(--navy);max-width:800px}
+.hero h1 span{color:var(--cobalt)}
+.hero .lead{position:absolute;left:80px;top:610px;font-size:32px;line-height:1.35;color:#33406b;max-width:760px}
+.hero .who{position:absolute;left:80px;bottom:56px;font-size:22px;color:var(--muted)}
+.hero .who b{color:var(--text);font-weight:600}
+.hero .obj{position:absolute;right:30px;top:120px;width:880px;height:760px;display:grid;place-items:center}
+.hero .obj::before{content:"";position:absolute;inset:60px;border-radius:50%;background:radial-gradient(circle,#ffffff 0%,#dfe8ff 45%,rgba(223,232,255,0) 70%)}
+.hero .obj img{position:relative;width:820px;-webkit-mask-image:radial-gradient(closest-side,#000 78%,transparent 100%);mask-image:radial-gradient(closest-side,#000 78%,transparent 100%)}
+.hero .tag{position:absolute;right:100px;bottom:110px;padding:22px 30px;font-size:22px;line-height:1.35;color:var(--muted);max-width:360px}
+.hero .tag b{display:block;font-size:42px;color:var(--navy);letter-spacing:-.02em}
+
+/* === CONTENT: bento like ref #2 bottom card === */
+.c .title{position:absolute;left:80px;top:70px;font-weight:700;font-size:56px;letter-spacing:-.03em;color:var(--navy);max-width:1300px;line-height:1.08}
+.c .org{position:absolute;right:80px;top:84px;font-size:20px;color:var(--muted)}
+.bento{position:absolute;left:80px;right:80px;top:260px;bottom:70px;display:grid;grid-template-columns:1.5fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:26px}
+.tile{padding:36px 40px;position:relative;overflow:hidden}
+.tile.main{grid-row:span 2;display:flex;flex-direction:column}
+.tile .k{font-size:22px;color:var(--muted);display:inline-block;padding:8px 18px;border-radius:30px;background:rgba(255,255,255,.7);margin-bottom:20px}
+.n{font-weight:600;font-size:110px;letter-spacing:-.05em;line-height:1;color:var(--navy)}
+.n small{font-size:36px;letter-spacing:0;margin-left:8px;color:var(--muted);font-weight:500}
+.d{font-size:24px;line-height:1.35;color:var(--muted);margin-top:14px}
+.tile.solid{background:linear-gradient(150deg,#2a52e6,#0B1F6E);color:#fff;border-color:rgba(255,255,255,.3)}
+.tile.solid .n,.tile.solid .n small{color:#fff}.tile.solid .d{color:#c9d6ff}
+/* bars inside main tile */
+.bars{flex:1;display:flex;align-items:flex-end;gap:46px;padding:30px 20px 0}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:22px;color:var(--muted)}
+.bar i{display:block;width:100%;border-radius:18px 18px 6px 6px;background:linear-gradient(180deg,#5b84ff,#1F44D6)}
+.bar.alt i{background:linear-gradient(180deg,#b9c8ef,#8ea3d8)}
+.bar b{font-size:34px;color:var(--navy);font-weight:600}
+
+.reveal{opacity:0;transform:translateY(20px) scale(.99);animation:in .9s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes in{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="frame"><div class="stage">
+  <div class="hero glass reveal">
+    <div class="ev"><b>Катаракта 2026</b> · Москва</div>
+    <div class="date">Сентябрь 2026</div>
+    <h1>Лентикулярная коррекция <span>смешанного астигматизма</span></h1>
+    <p class="lead">Как исправить астигматизм операцией SMILE, если одна ось глаза близорукая, а другая — дальнозоркая</p>
+    <p class="who"><b>Никитина А.Е.</b> · Костенев С.В., Макаров Р.А., Садрутдинов Р.Ш.</p>
+    <div class="obj"><img src="../../presentation/assets/lenticule-3d.jpg" alt="Модель седловидной лентикулы"></div>
+    <div class="tag glass"><b>Седло</b>такую форму имеет лентикула при смешанном астигматизме</div>
+  </div>
+</div></div>
+
+<div class="frame"><div class="stage c">
+  <h2 class="title reveal">Зрение без очков восстановилось быстрее после SMILE</h2>
+  <div class="org">РосУниМед · МНТК «Микрохирургия глаза»</div>
+  <div class="bento">
+    <div class="tile main glass reveal" style="animation-delay:.1s">
+      <span class="k">НКОЗ через 3 месяца</span>
+      <div class="bars">
+        <div class="bar alt"><b>0,34</b><i style="height:120px"></i>до операции</div>
+        <div class="bar"><b>0,88</b><i style="height:310px"></i>SMILE</div>
+        <div class="bar alt"><b>0,75</b><i style="height:265px"></i>ФемтоЛАЗИК</div>
+      </div>
+    </div>
+    <div class="tile glass reveal" style="animation-delay:.2s"><span class="k">безопасность</span><div class="n">1,03</div><div class="d">индекс безопасности SMILE</div></div>
+    <div class="tile solid glass reveal" style="animation-delay:.3s"><span class="k" style="background:rgba(255,255,255,.15);color:#dfe7ff">цилиндр, 6 мес.</span><div class="n">−0,62<small>дптр</small></div><div class="d">было −3,07</div></div>
+    <div class="tile glass reveal" style="animation-delay:.4s"><span class="k">прогнозируемость</span><div class="n">74<small>%</small></div><div class="d">глаз в пределах ±0,5 дптр</div></div>
+    <div class="tile glass reveal" style="animation-delay:.5s"><span class="k">пациенты</span><div class="n">40<small>глаз</small></div><div class="d">в каждой группе, 6 месяцев</div></div>
+  </div>
+</div></div>
+
+<script>
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.querySelector('.stage').style.transform='scale('+f.clientWidth/1920+')'})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>
