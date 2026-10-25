@@ -109,7 +109,8 @@ def sclera_profile():
     psA = ang_at_z(RS, Z_A)
     B = cornea_pt(np.array([PSI_L]), T_cornea(PSI_L))[0]
     psB = math.asin(min(B[0] / RSI, 1.0))
-    return np.vstack([sph(RS, (psA, math.pi), 120), sph(RSI, (math.pi, psB), 120)[1:], B[None]])
+    lip = np.array([[(R_ANT + 0.012) * math.sin(PSI_L - 0.05), -R_ANT + (R_ANT + 0.012) * math.cos(PSI_L - 0.05)]])   # лимб: склера чуть заходит на край роговицы
+    return np.vstack([lip, sph(RS, (psA, math.pi), 120), sph(RSI, (math.pi, psB), 120)[1:], B[None]])
 
 
 Z_ORA = -7.6
@@ -319,7 +320,7 @@ def mat_beam():
     nt = m.node_tree; nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial'); em = nt.nodes.new('ShaderNodeEmission'); tr = nt.nodes.new('ShaderNodeBsdfTransparent')
     mix = nt.nodes.new('ShaderNodeMixShader'); lw = nt.nodes.new('ShaderNodeLayerWeight'); lw.inputs['Blend'].default_value = 0.35
-    em.inputs['Color'].default_value = (1.0, 0.16, 0.30, 1); em.inputs['Strength'].default_value = 1.6
+    em.inputs['Color'].default_value = (0.30, 0.70, 1.0, 1); em.inputs['Strength'].default_value = 2.2
     inv = nt.nodes.new('ShaderNodeMath'); inv.operation = 'MULTIPLY_ADD'; inv.inputs[1].default_value = 0.30; inv.inputs[2].default_value = 0.10
     nt.links.new(lw.outputs['Facing'], inv.inputs[0])
     nt.links.new(inv.outputs['Value'], mix.inputs['Fac']); nt.links.new(tr.outputs['BSDF'], mix.inputs[1]); nt.links.new(em.outputs['Emission'], mix.inputs[2])
@@ -352,15 +353,159 @@ M = {
     'house': mat_basic('Housing', lin((95, 102, 115)), 1.0, rough=0.35, metal=0.8),
     'steel': mat_basic('Steel', lin((205, 208, 214)), 1.0, rough=0.22, metal=1.0),
     'steel_dark': mat_basic('SteelDark', lin((120, 124, 132)), 1.0, rough=0.35, metal=1.0),
-    'spot': mat_basic('Spot', (1.0, 0.75, 0.85), 1.0, emit=40.0),
-    'obl': mat_attr_alpha('OBL', lin((236, 242, 250)), 'cut', base_alpha=0.2, emit=0.10, noise_scale=45.0),
+    'spot': mat_basic('Spot', (0.75, 0.9, 1.0), 1.0, emit=40.0),
+    'obl': mat_attr_alpha('OBL', lin((200, 210, 224)), 'cut', base_alpha=0.22, emit=0.0, noise_scale=45.0),
     'flat': mat_basic('MeridianFlat', lin((46, 204, 113)), 1.0, rough=0.4, emit=1.2),
     'steep': mat_basic('MeridianSteep', lin((239, 68, 68)), 1.0, rough=0.4, emit=1.2),
     'lent': mat_lenticule(),
     'beam': mat_beam(),
 }
-# прозрачность лентикулы меняется по кадрам
+
+
+# ---------------------------------------------------------------- реалистичные материалы (v3)
+def _new_mat(name):
+    m = bpy.data.materials.new(name)
+    try: m.use_nodes = True
+    except Exception: pass
+    return m, m.node_tree, m.node_tree.nodes.get('Principled BSDF')
+
+
+def _set(b, key, val):
+    for k in ((key,) if isinstance(key, str) else key):
+        if k in b.inputs: b.inputs[k].default_value = val; return
+
+
+def mat_glass(name, color, ior, rough=0.01, alpha=1.0):
+    m, nt, b = _new_mat(name)
+    _set(b, 'Base Color', (*color, 1)); _set(b, 'Roughness', rough); _set(b, ('Transmission Weight', 'Transmission'), 1.0)
+    _set(b, 'IOR', ior); _set(b, ('Specular IOR Level', 'Specular'), 0.5); _set(b, 'Alpha', alpha)
+    m['bsdf'] = b.name
+    return m
+
+
+def mat_sclera():
+    """Склера: тёплый белый, подповерхностное рассеяние, сеть тонких сосудов (гуще к экватору)."""
+    m, nt, b = _new_mat('ScleraReal')
+    _set(b, 'Base Color', (*lin((242, 236, 232)), 1)); _set(b, 'Roughness', 0.32); _set(b, ('Subsurface Weight', 'Subsurface'), 0.18)
+    _set(b, ('Subsurface Radius',), (1.0, 0.35, 0.25)); _set(b, ('Subsurface Scale',), 0.6); _set(b, ('Coat Weight', 'Clearcoat'), 0.35)
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 0.35; nz.inputs['Detail'].default_value = 4
+    mix = nt.nodes.new('ShaderNodeVectorMath'); mix.operation = 'MULTIPLY_ADD'; mix.inputs[1].default_value = (1.4, 1.4, 1.4)
+    nt.links.new(nz.outputs['Color'], mix.inputs[0]); nt.links.new(tc.outputs['Object'], mix.inputs[2])
+    cols = []
+    for sc, w, strength in ((0.22, 0.020, 1.0), (0.55, 0.012, 0.7)):
+        vo = nt.nodes.new('ShaderNodeTexVoronoi'); vo.feature = 'DISTANCE_TO_EDGE'; vo.inputs['Scale'].default_value = sc
+        nt.links.new(mix.outputs['Vector'], vo.inputs['Vector'])
+        mr = nt.nodes.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = 0.0; mr.inputs['From Max'].default_value = w
+        mr.inputs['To Min'].default_value = strength; mr.inputs['To Max'].default_value = 0.0
+        nt.links.new(vo.outputs['Distance'], mr.inputs['Value']); cols.append(mr)
+    mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'; nt.links.new(cols[0].outputs['Result'], mx.inputs[0]); nt.links.new(cols[1].outputs['Result'], mx.inputs[1])
+    # сосуды бледнеют к лимбу (z близко к вершине) и видны на экваторе
+    sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(tc.outputs['Object'], sep.inputs['Vector'])
+    zr = nt.nodes.new('ShaderNodeMapRange'); zr.inputs['From Min'].default_value = -3.2; zr.inputs['From Max'].default_value = -6.5
+    nt.links.new(sep.outputs['Z'], zr.inputs['Value'])
+    mk = nt.nodes.new('ShaderNodeMath'); mk.operation = 'MULTIPLY'; nt.links.new(mx.outputs['Value'], mk.inputs[0]); nt.links.new(zr.outputs['Result'], mk.inputs[1])
+    mk2 = nt.nodes.new('ShaderNodeMath'); mk2.operation = 'MULTIPLY'; mk2.inputs[1].default_value = 0.75; nt.links.new(mk.outputs['Value'], mk2.inputs[0])
+    mc = nt.nodes.new('ShaderNodeMix'); mc.data_type = 'RGBA'
+    mc.inputs['A'].default_value = (*lin((242, 236, 232)), 1); mc.inputs['B'].default_value = (*lin((176, 52, 48)), 1)
+    nt.links.new(mk2.outputs['Value'], mc.inputs['Factor']); nt.links.new(mc.outputs['Result'], b.inputs['Base Color'])
+    m['bsdf'] = b.name
+    return m
+
+
+def mat_iris():
+    """Радужка: радиальные волокна, тёплая зона у зрачка (коллеретка), серо-голубая периферия, тёмный лимбальный ободок, крипты, рельеф."""
+    m, nt, b = _new_mat('IrisReal')
+    _set(b, 'Roughness', 0.45); _set(b, ('Specular IOR Level', 'Specular'), 0.3)
+    tc = nt.nodes.new('ShaderNodeTexCoord'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(tc.outputs['Object'], sep.inputs['Vector'])
+    ln = nt.nodes.new('ShaderNodeVectorMath'); ln.operation = 'LENGTH'
+    cxy = nt.nodes.new('ShaderNodeCombineXYZ'); nt.links.new(sep.outputs['X'], cxy.inputs['X']); nt.links.new(sep.outputs['Y'], cxy.inputs['Y'])
+    nt.links.new(cxy.outputs['Vector'], ln.inputs[0])
+    rn = nt.nodes.new('ShaderNodeMapRange'); rn.inputs['From Min'].default_value = 1.75; rn.inputs['From Max'].default_value = 5.45
+    nt.links.new(ln.outputs['Value'], rn.inputs['Value'])
+    # единичный вектор направления × частота → волокна без шва
+    nrm = nt.nodes.new('ShaderNodeVectorMath'); nrm.operation = 'NORMALIZE'; nt.links.new(cxy.outputs['Vector'], nrm.inputs[0])
+    def fibres(freq, rscale, det):
+        sc = nt.nodes.new('ShaderNodeVectorMath'); sc.operation = 'SCALE'; sc.inputs['Scale'].default_value = freq
+        nt.links.new(nrm.outputs['Vector'], sc.inputs[0])
+        cz = nt.nodes.new('ShaderNodeCombineXYZ'); rr = nt.nodes.new('ShaderNodeMath'); rr.operation = 'MULTIPLY'; rr.inputs[1].default_value = rscale
+        nt.links.new(ln.outputs['Value'], rr.inputs[0]); nt.links.new(rr.outputs['Value'], cz.inputs['Z'])
+        ad = nt.nodes.new('ShaderNodeVectorMath'); ad.operation = 'ADD'; nt.links.new(sc.outputs['Vector'], ad.inputs[0]); nt.links.new(cz.outputs['Vector'], ad.inputs[1])
+        nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 1.0; nz.inputs['Detail'].default_value = det; nz.inputs['Roughness'].default_value = 0.55
+        nt.links.new(ad.outputs['Vector'], nz.inputs['Vector']); return nz
+    f1 = fibres(60.0, 0.8, 6); f2 = fibres(22.0, 2.0, 3)
+    # граница коллеретки — неровная
+    pert = nt.nodes.new('ShaderNodeMath'); pert.operation = 'MULTIPLY_ADD'; pert.inputs[1].default_value = 0.22; pert.inputs[2].default_value = -0.11
+    nt.links.new(f2.outputs['Fac'], pert.inputs[0])
+    rp = nt.nodes.new('ShaderNodeMath'); rp.operation = 'ADD'; nt.links.new(rn.outputs['Result'], rp.inputs[0]); nt.links.new(pert.outputs['Value'], rp.inputs[1])
+    ramp = nt.nodes.new('ShaderNodeValToRGB'); cr = ramp.color_ramp
+    stops = [(0.00, (52, 32, 20)), (0.05, (140, 78, 32)), (0.15, (214, 132, 58)), (0.32, (204, 142, 78)), (0.41, (160, 190, 186)),
+             (0.68, (150, 192, 205)), (0.87, (118, 158, 172)), (0.95, (62, 84, 96)), (1.00, (38, 46, 54))]
+    while len(cr.elements) < len(stops): cr.elements.new(0.5)
+    for e, (pos, c) in zip(cr.elements, stops): e.position = pos; e.color = (*lin(c), 1)
+    nt.links.new(rp.outputs['Value'], ramp.inputs['Fac'])
+    # яркость волокон
+    br = nt.nodes.new('ShaderNodeMapRange'); br.inputs['From Min'].default_value = 0.3; br.inputs['From Max'].default_value = 0.7
+    br.inputs['To Min'].default_value = 0.6; br.inputs['To Max'].default_value = 1.55; nt.links.new(f1.outputs['Fac'], br.inputs['Value'])
+    # крипты — тёмные пятна
+    vo = nt.nodes.new('ShaderNodeTexVoronoi'); vo.inputs['Scale'].default_value = 1.6; nt.links.new(tc.outputs['Object'], vo.inputs['Vector'])
+    cp = nt.nodes.new('ShaderNodeMapRange'); cp.inputs['From Min'].default_value = 0.0; cp.inputs['From Max'].default_value = 0.16
+    cp.inputs['To Min'].default_value = 0.55; cp.inputs['To Max'].default_value = 1.0; nt.links.new(vo.outputs['Distance'], cp.inputs['Value'])
+    mul = nt.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; nt.links.new(br.outputs['Result'], mul.inputs[0]); nt.links.new(cp.outputs['Result'], mul.inputs[1])
+    col = nt.nodes.new('ShaderNodeMix'); col.data_type = 'RGBA'; col.blend_type = 'MULTIPLY'; col.inputs['Factor'].default_value = 1.0
+    nt.links.new(ramp.outputs['Color'], col.inputs['A'])
+    cc = nt.nodes.new('ShaderNodeCombineColor'); nt.links.new(mul.outputs['Value'], cc.inputs[0]); nt.links.new(mul.outputs['Value'], cc.inputs[1]); nt.links.new(mul.outputs['Value'], cc.inputs[2])
+    nt.links.new(cc.outputs['Color'], col.inputs['B']); nt.links.new(col.outputs['Result'], b.inputs['Base Color'])
+    for k in ('Emission Color', 'Emission'):   # радужка лежит «в глубине» под роговицей — лёгкая собственная яркость
+        if k in b.inputs: nt.links.new(col.outputs['Result'], b.inputs[k]); break
+    _set(b, 'Emission Strength', 0.35)
+    bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.6; bump.inputs['Distance'].default_value = 0.05
+    nt.links.new(f1.outputs['Fac'], bump.inputs['Height']); nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+    m['bsdf'] = b.name
+    return m
+
+
+def mat_lent_mer():
+    """Лентикула: гладкая полупрозрачная ткань; цвет по меридианам — зелёный (плоский) ↔ красный (крутой)."""
+    m, nt, b = _new_mat('LenticuleMer')
+    _set(b, 'Roughness', 0.18); _set(b, ('Coat Weight', 'Clearcoat'), 0.8); _set(b, ('Subsurface Weight', 'Subsurface'), 0.0)
+    at = nt.nodes.new('ShaderNodeAttribute'); at.attribute_type = 'GEOMETRY'; at.attribute_name = 'mer'
+    mc = nt.nodes.new('ShaderNodeMix'); mc.data_type = 'RGBA'
+    mc.inputs['A'].default_value = (*lin((52, 196, 110)), 1); mc.inputs['B'].default_value = (*lin((230, 66, 66)), 1)
+    nt.links.new(at.outputs['Fac'], mc.inputs['Factor']); nt.links.new(mc.outputs['Result'], b.inputs['Base Color'])
+    for k in ('Emission Color', 'Emission'):
+        if k in b.inputs: nt.links.new(mc.outputs['Result'], b.inputs[k]); break
+    _set(b, 'Emission Strength', 0.25); _set(b, 'Alpha', 0.0)
+    for k, v in (('surface_render_method', 'DITHERED'), ('blend_method', 'HASHED')):
+        try: setattr(m, k, v)
+        except Exception: pass
+    m['bsdf'] = b.name
+    return m
+
+
+M['cornea'] = mat_glass('CorneaGlass', lin((250, 252, 255)), 1.376, 0.005)
+M['lens'] = mat_glass('LensGlass', lin((252, 246, 228)), 1.42, 0.03)
+M['lens_cut'] = M['lens']
+M['glass'] = mat_glass('ContactGlassReal', lin((245, 250, 255)), 1.52, 0.003)
+M['house'] = mat_glass('InterfacePlastic', lin((236, 240, 248)), 1.49, 0.06)
+M['scl'] = mat_sclera()
+M['iris'] = mat_iris()
+M['iris_cut'] = mat_basic('IrisCut2', lin((70, 44, 30)), 1.0, rough=0.7)
+M['ret'] = mat_basic('RetinaDark', lin((40, 14, 10)), 1.0, rough=0.8)
+M['cho'] = mat_basic('ChoroidDark', lin((26, 8, 6)), 1.0, rough=0.8)
+M['cil'] = mat_basic('CiliaryDark', lin((48, 20, 14)), 1.0, rough=0.8)
+M['epi_cut'] = mat_basic('EpiCut2', lin((226, 206, 200)), 0.92, rough=0.5)
+M['str_cut'] = mat_basic('StromaCut2', lin((214, 222, 232)), 0.9, rough=0.55, sss=0.1)
+M['bow_cut'] = mat_basic('BowCut2', lin((246, 242, 232)), 0.95, rough=0.5)
+M['end_cut'] = mat_basic('EndCut2', lin((150, 160, 190)), 0.95, rough=0.5)
+M['lent'] = mat_lent_mer()
+# прозрачность лентикулы и интерфейса меняется по кадрам
 LENT_BSDF = M['lent'].node_tree.nodes[M['lent']['bsdf']]
+IF_BSDF = [M[k].node_tree.nodes[M[k]['bsdf']] for k in ('glass', 'house')]
+for k in ('glass', 'house'):
+    for kk, v in (('surface_render_method', 'DITHERED'), ('blend_method', 'HASHED')):
+        try: setattr(M[k], kk, v)
+        except Exception: pass
 
 
 
@@ -418,8 +563,31 @@ layer_objs = [(new_obj('Cut_' + n, [M[m]]), prof) for n, prof, m in CORNEA_LAYER
 zin = lambda r: -R_ANT + math.sqrt(R_ANT ** 2 - r ** 2)
 GL_R = 4.9
 glass_prof = np.vstack([sphere_pts(R_ANT, np.linspace(0, GL_R, 50)), sphere_pts(R_ANT + 0.9, np.linspace(GL_R, 0, 50))])
-house_prof = np.array([(GL_R, zin(GL_R) + 0.05), (GL_R + 0.35, zin(GL_R) + 0.05), (GL_R + 0.35, zin(GL_R) + 0.75), (GL_R, zin(GL_R) + 0.75)])
+ZR = -R_ANT + math.sqrt((R_ANT + 0.9) ** 2 - GL_R ** 2)          # верх края мениска
+house_prof = np.array([(GL_R + 0.15, ZR + 1.35), (GL_R + 0.6, ZR + 1.35), (9.8, ZR + 7.8), (9.35, ZR + 7.8)])   # прозрачный конус
 glass_obj = new_obj('ContactGlass', [M['glass'], M['glass']]); house_obj = new_obj('Housing', [M['house'], M['house']])
+ribs_obj = new_obj('InterfaceRibs', [M['house']])
+
+
+def build_ribs(n=36):
+    """Кольцо с рёбрами (как у одноразового интерфейса VisuMax): нижнее кольцо + стойки + верхнее кольцо."""
+    Vs_, Q = [], []; off = 0
+    for prof in (np.array([(GL_R - 0.05, ZR - 0.45), (GL_R + 0.62, ZR - 0.45), (GL_R + 0.62, ZR - 0.15), (GL_R - 0.05, ZR - 0.15)]),
+                 np.array([(GL_R + 0.05, ZR + 1.05), (GL_R + 0.62, ZR + 1.05), (GL_R + 0.62, ZR + 1.35), (GL_R + 0.05, ZR + 1.35)])):
+        V_, (q_, t_, _), _, _, _ = revolve(prof, 0, 2 * np.pi, 120)
+        Vs_.append(V_); Q.append(q_ + off); off += len(V_)
+    for i in range(n):
+        th = 2 * np.pi * i / n; w = 0.16
+        er, et = np.array([math.cos(th), math.sin(th), 0]), np.array([-math.sin(th), math.cos(th), 0])
+        cs = [(r_, t_, z_) for z_ in (ZR - 0.15, ZR + 1.05) for (r_, t_) in ((GL_R + 0.1, -w), (GL_R + 0.6, -w), (GL_R + 0.6, w), (GL_R + 0.1, w))]
+        V_ = np.array([r_ * er + t_ * et + np.array([0, 0, z_]) for r_, t_, z_ in cs])
+        q_ = np.array([[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]])
+        Vs_.append(V_); Q.append(q_ + off); off += 8
+    Q = np.vstack(Q)
+    return np.vstack(Vs_), (Q, np.zeros((0, 3), int), []), np.zeros(len(Q), int)
+
+
+set_mesh(ribs_obj, *build_ribs(), sharp=30)
 lent_obj = new_obj('Lenticule', [M['lent'], M['lent']])
 obl = {k: new_obj('OBL_' + k, [M['obl']]) for k in ('post', 'side', 'cap', 'inc')}
 
@@ -453,13 +621,13 @@ for zs_ in (+1, -1):
 
 # пузырьки лазера: вершины сетки -> сферы (узел «Mesh to Points»), радиус и свечение — атрибуты вершин
 def mat_bubble():
-    m = mat_basic('Bubble', lin((236, 244, 255)), 0.92, rough=0.15, coat=0.6, emit=0.0)
+    m = mat_basic('Bubble', lin((232, 238, 246)), 0.95, rough=0.25, coat=0.8, emit=0.0)
     nt = m.node_tree; b = nt.nodes[m['bsdf']]
     at = nt.nodes.new('ShaderNodeAttribute'); at.attribute_type = 'GEOMETRY'; at.attribute_name = 'glow'
-    ma = nt.nodes.new('ShaderNodeMath'); ma.operation = 'MULTIPLY_ADD'; ma.inputs[1].default_value = 7.0; ma.inputs[2].default_value = 0.18
+    ma = nt.nodes.new('ShaderNodeMath'); ma.operation = 'MULTIPLY_ADD'; ma.inputs[1].default_value = 6.0; ma.inputs[2].default_value = 0.35
     nt.links.new(at.outputs['Fac'], ma.inputs[0])
     for k in ('Emission Color', 'Emission'):
-        if k in b.inputs: b.inputs[k].default_value = (0.80, 0.90, 1.0, 1); break
+        if k in b.inputs: b.inputs[k].default_value = (0.55, 0.80, 1.0, 1); break
     nt.links.new(ma.outputs['Value'], b.inputs['Emission Strength'])
     return m
 
@@ -481,9 +649,9 @@ mer_obj = new_obj('Meridians', [M['flat'], M['steep']])
 
 
 # ================================================================ таймлайн
-SEGS = [('intro', 96), ('zoom', 72), ('layers', 48), ('dock', 40), ('post', 168), ('side', 48), ('cap', 144), ('inc', 60),
-        ('undock', 36), ('form', 132), ('close', 54), ('spat_in', 20), ('spat_ant', 56), ('spat_post', 56), ('spat_out', 20),
-        ('forc_in', 36), ('pull', 110), ('show', 144)]
+SEGS = [('intro', 84), ('dock', 72), ('post', 168), ('side', 48), ('cap', 144), ('reveal', 48), ('inc', 72), ('undock', 36),
+        ('section', 60), ('form', 132), ('close', 54), ('spat_in', 20), ('spat_ant', 56), ('spat_post', 56), ('spat_out', 20),
+        ('forc_in', 36), ('pull', 110), ('release', 54), ('show', 180)]
 SEGS = [(n, max(6, int(round(k * A.speed)))) for n, k in SEGS]
 START = {}; acc = 1
 for n, k in SEGS: START[n] = acc; acc += k
@@ -504,10 +672,11 @@ def during(n, f): return START[n] <= f < START[n] + LEN[n]
 
 
 def W_of(f):
-    if f < START['zoom']: return 180.0
-    if f < START['layers']: return 180.0 - 90.0 * ss(prog('zoom', f))
+    """Роговица целая, пока лазер не закончил все резы; затем раскрывается по меридианам (плоскому и крутому)."""
+    if f < START['section']: return 0.0
+    if f < START['form']: return round(90.0 * ss(prog('section', f)), 1)
     if f < START['close']: return 90.0
-    if f < START['spat_in']: return 90.0 * (1 - ss(prog('close', f)))
+    if f < START['spat_in']: return round(90.0 * (1 - ss(prog('close', f))), 1)
     return 0.0
 
 
@@ -539,15 +708,17 @@ def lent_deform(V, pull, comp=1.0):
     q = V - C; rad = np.linalg.norm(q, axis=1); u = q / rad[:, None]
     beta = np.arcsin(np.clip(u @ N_INC, -1, 1)); alpha = np.arctan2(u @ D_INC, u @ EZ)
     s = R_LT * alpha + pull; v = R_LT * beta; h = rad - R_LT
-    c = comp * ss((s - (S_INC - 1.4)) / 1.35)
-    Xf = (R_LT + h) * np.sin(beta); Yf = (R_LT + h) * np.cos(beta) - R_LT
-    sig = (A.inc_width * 0.46) / L.R
-    Xc = sig * v; Yc = h + 0.13 * np.sin(2 * np.pi * v / 0.85 + 1.7 * s) * (0.4 + 0.6 * np.abs(v) / L.R)
-    X = (1 - c) * Xf + c * Xc; Y = (1 - c) * Yf + c * Yc
-    P, T, B = path(s)
+    # сечение — дуга окружности: кривизна плавно меняется от кривизны роговицы (−1/R) до свёрнутой «трубочки» (+1/ρ0)
+    c = comp * ss((s - (S_INC - 1.8)) / 1.7)
+    kap = -(1 - c) / R_LT + c / ROLL_R
+    small = np.abs(kap) < 1e-6; ks = np.where(small, 1.0, kap)
+    sx = np.where(small, v, np.sin(ks * v) / ks); sy = np.where(small, 0.5 * kap * v * v, (1 - np.cos(ks * v)) / ks)
+    X = sx - h * np.sin(kap * v); Y = sy + h * np.cos(kap * v)
+    P, T, B = path(s * (1 + 0.06 * c))          # лёгкое упругое растяжение вдоль тяги
     return P + N_INC[None] * X[:, None] + B * Y[:, None]
 
 
+ROLL_R = 1.15                                  # радиус «трубочки» при прохождении разреза 2,5 мм
 T_EDGE_INC = float(L.thickness(L.R * 0.999 * math.cos(TH_INC), L.R * 0.999 * math.sin(TH_INC)))
 H_MID = -A.exag * T_EDGE_INC / 2000.0
 P_TOTAL = S_INC + S_LEAD + 2.2
@@ -563,8 +734,10 @@ def forceps_state(f):
         return s, gap, True, 0.0
     if during('pull', f):
         return S_GRIP + P_TOTAL * ss(prog('pull', f)), GAP_CLOSED, True, 0.0
-    if during('show', f) or f > NF - 1:
-        return S_GRIP + P_TOTAL, GAP_CLOSED, True, 0.0
+    if during('release', f):
+        u = prog('release', f)
+        gap = GAP_CLOSED + 0.9 * ss(u / 0.18); away = 40.0 * ss((u - 0.12) / 0.4)
+        return S_GRIP + P_TOTAL, gap, u < 0.55, away
     return 0, 0, False, 0
 
 
@@ -698,9 +871,9 @@ def build_static(W):
     th0, th1 = wedge_range(W)
     e0, e1 = wedge_range(max(W - 0.8, 0.0)) if W > 0.01 else (th0, th1)
     for ob, prof in anat_objs:
-        V, P, Mt, _, _ = revolve(prof, th0, th1, 180)
+        V, P, Mt, _, _ = revolve(prof, th0, th1, 360)
         set_mesh(ob, V, P, Mt, sharp=40)
-    V, P, Mt, _, _ = revolve(CORNEA_PROF, th0, th1, 180, caps=False); set_mesh(cornea_obj, V, P, Mt, sharp=40)
+    V, P, Mt, _, _ = revolve(CORNEA_PROF, th0, th1, 360, caps=False); set_mesh(cornea_obj, V, P, Mt, sharp=40)
     for ob, prof in layer_objs:
         V, P, Mt, _, _ = revolve(prof, th0, th1, 2)
         ng = P[2]; ob.hide_render = not ng
@@ -724,9 +897,9 @@ def build_static(W):
     prof = np.column_stack([(R_ANT - dd) * math.sin(psi), -R_ANT + (R_ANT - dd) * math.cos(psi)])
     V, P, Mt, ii, tt = revolve(prof, TH_INC - HALF_INC, TH_INC + HALF_INC, 360, closed=False)
     _cache['inc'] = (V, P, Mt, ii / (len(dd) - 1), tt)
-    V, P, Mt, _, _ = revolve(lent_profile, e0, e1, 180)
+    V, P, Mt, _, tt = revolve(lent_profile, e0, e1, 180)
     Vl = V; thk = lent_thk(Vl)
-    _cache['lent'] = (Vl, P, Mt, thk)
+    _cache['lent'] = (Vl, P, Mt, thk, np.sin(tt - TH_AX) ** 2)
     _cache['W'] = W
 
 
@@ -735,7 +908,7 @@ def lent_thk(V):
     return np.nan_to_num(L.thickness(V[:, 0] * k, V[:, 1] * k), nan=L.tmin)
 
 
-V_FULL, P_FULL, M_FULL, _, _ = revolve(lent_profile, 0, 2 * np.pi, 180)
+V_FULL, P_FULL, M_FULL, _, TT_FULL = revolve(lent_profile, 0, 2 * np.pi, 180)
 THK_FULL = lent_thk(V_FULL)
 
 
@@ -815,12 +988,9 @@ def place(obj, origin, x, y, z):
     obj.matrix_world = Matrix(((x[0], y[0], z[0], origin[0]), (x[1], y[1], z[1], origin[1]), (x[2], y[2], z[2], origin[2]), (0, 0, 0, 1)))
 
 
-DISPLAY_LIFT = 3.4
+DISPLAY_LIFT = 4.2
 DISP_C0 = np.array([0, 0, -0.1])
-G_REST = to3(*lent_profile(TH_INC)[33], TH_INC) * 0.5 + to3(*lent_profile(TH_INC)[37], TH_INC) * 0.5   # край у разреза, середина толщины
-
-
-EXAG_SHOW = 8.0   # в конце толщина лентикулы плавно увеличивается ×3 → ×8, чтобы седловидная форма читалась при облёте
+EXAG_SHOW = 8.0   # на крупных планах извлечённой лентикулы толщина плавно увеличивается ×3 → ×8, чтобы профиль читался
 
 
 def thick_scale(V, k):
@@ -829,16 +999,33 @@ def thick_scale(V, k):
 
 
 def display_pose(V, f=None):
-    """Извлечённая лентикула в пинцете: над глазом, горизонтально (камера облетает её вокруг)."""
+    """Извлечённая лентикула, уже без пинцета: над глазом, горизонтально."""
     if f is not None and f >= START['show']:
-        V = thick_scale(V, 1 + (EXAG_SHOW / A.exag - 1) * ss((prog('show', f) - 0.45) / 0.2))
+        V = thick_scale(V, 1 + (EXAG_SHOW / A.exag - 1) * ss((prog('show', f) - 0.30) / 0.15))
     return (np.asarray(V) - DISP_C0) + np.array([0, 0, DISPLAY_LIFT])
 
 
-def forceps_display():
-    tip = display_pose(G_REST[None])[0]
-    x = D_INC * math.cos(math.radians(12)) + EZ * math.sin(math.radians(12)); z = EZ - x * np.dot(EZ, x); z /= np.linalg.norm(z)
-    return tip, x, np.cross(z, x), z
+def elastic(t):
+    """Упругий выход на форму: с небольшим перехлёстом и затуханием (0 → 1)."""
+    t = float(np.clip(t, 0, 1)); return 1 - math.exp(-5.5 * t) * math.cos(10.5 * t) * (1 - t)
+
+
+def lent_pose(V, f):
+    """Положение вершин лентикулы (и линий меридианов) в кадре f после начала извлечения."""
+    if during('pull', f): return lent_deform(V, forceps_state(f)[0] - S_GRIP)
+    if f < START['release']: return V
+    Vr = lent_deform(V, P_TOTAL)
+    if during('release', f):
+        k = elastic((prog('release', f) - 0.1) / 0.9) if prog('release', f) > 0.1 else 0.0
+        return Vr * (1 - k) + display_pose(V) * k
+    return display_pose(V, f)
+
+
+def mer_attr(V):
+    th = np.arctan2(V[:, 1], V[:, 0]); return np.sin(th - TH_AX) ** 2
+
+
+MER_FULL = np.sin(TT_FULL - TH_AX) ** 2
 
 
 def frame_state(f):
@@ -847,39 +1034,39 @@ def frame_state(f):
         build_static(W); _cache['W'] = W
     spot, pr = laser_state(f)
     update_masks(f, pr)
-    # контактная линза
+    # интерфейс (контактная линза с конусом) — весь период стыковки
     dz = dock_of(f)
-    show_glass = during('dock', f) or during('undock', f) or (during('post', f) and f < START['post'] + 10)
-    glass_obj.location = (0, 0, dz); glass_obj.hide_render = bool(dz > 13.5 or not show_glass)   # на крупных планах лазера не мешает
-    house_obj.hide_render = True
+    for ob in (glass_obj, house_obj, ribs_obj):
+        ob.location = (0, 0, dz); ob.hide_render = bool(dz > 13.5)
+    # на крупных планах лазера интерфейс закрывал бы роговицу: плавно растворяется и возвращается при отстыковке
+    a_if = 1.0
+    if f >= START['post'] and f < START['undock']: a_if = 1 - ss((f - START['post']) / 16)
+    for mb in IF_BSDF: mb.inputs['Alpha'].default_value = float(a_if)
+    if a_if <= 0.001:
+        for ob in (glass_obj, house_obj, ribs_obj): ob.hide_render = True
+    nerve_obj.hide_render = True
     # лазер
     on = spot is not None
     for ob in (beam_obj, spot_obj, halo_obj):
         ob.hide_render = not on
         if on: ob.location = tuple(spot)
-    # пузырьки и меридианы
     update_bubbles(f, W)
-    # лентикула
-    a_l = ss(prog('form', f) / 0.15)
+    # лентикула: появляется только после того, как пройдены дно и верх (этап reveal)
+    a_l = 0.82 * ss(prog('reveal', f))
+    if f >= START['show']: a_l = 0.92
     lent_obj.hide_render = bool(a_l <= 0.001)
     LENT_BSDF.inputs['Alpha'].default_value = float(a_l)
-    if f >= START['forc_in']:
-        if f < START['show']:
-            fs = forceps_state(f); pull = (fs[0] - S_GRIP) if during('pull', f) else 0.0
-            V = lent_deform(V_FULL, pull) if pull > 0 else V_FULL
-        else:
-            k = ss((prog('show', f) - 0.05) / 0.4)
-            V = lent_deform(V_FULL, P_TOTAL) * (1 - k) + display_pose(V_FULL, f) * k
-        set_mesh(lent_obj, V, P_FULL, M_FULL, attrs={'thk': THK_FULL}, sharp=35)
+    if f >= START['show']:   # без пинцета: вырез по плоскому и крутому меридианам, профили — на плоскостях среза
+        Wd = round(90.0 * ss(prog('show', f) / 0.15), 1)
+        Vs_, Ps_, Ms_, _, ts_ = revolve(lent_profile, *wedge_range(Wd), 180)
+        set_mesh(lent_obj, display_pose(Vs_, f), Ps_, Ms_, attrs={'thk': lent_thk(Vs_), 'mer': np.sin(ts_ - TH_AX) ** 2}, sharp=35)
+    elif f >= START['pull']:
+        set_mesh(lent_obj, lent_pose(V_FULL, f), P_FULL, M_FULL, attrs={'thk': THK_FULL, 'mer': MER_FULL}, sharp=35)
     else:
-        Vl, P, Mt, thk = _cache['lent']; set_mesh(lent_obj, Vl, P, Mt, attrs={'thk': thk}, sharp=35)
-    mer_obj.hide_render = f < START['post']
+        Vl, P, Mt, thk, mer = _cache['lent']; set_mesh(lent_obj, Vl, P, Mt, attrs={'thk': thk, 'mer': mer}, sharp=35)
+    mer_obj.hide_render = f < START['reveal'] + 0.35 * LEN['reveal']
     if not mer_obj.hide_render:
-        if f < START['forc_in'] or not (during('pull', f) or f >= START['show']): Vm = MER_V
-        elif during('pull', f): Vm = lent_deform(MER_V, forceps_state(f)[0] - S_GRIP)
-        else:
-            k = ss((prog('show', f) - 0.05) / 0.4); Vm = lent_deform(MER_V, P_TOTAL) * (1 - k) + display_pose(MER_V, f) * k
-        set_mesh(mer_obj, Vm, MER_P, MER_M, sharp=0)
+        set_mesh(mer_obj, lent_pose(MER_V, f) if f >= START['pull'] else MER_V, MER_P, MER_M, sharp=0)
     # шпатель
     pl, Lin, psi, vis = spat_state(f)
     spat_obj.hide_render = not vis
@@ -891,10 +1078,6 @@ def frame_state(f):
     for ob, _ in jaws: ob.hide_render = not vis
     if vis:
         o, x, y, z = forceps_frame(s)
-        if f >= START['show']:   # пинцет держит лентикулу и переносит её в положение показа
-            k = ss((prog('show', f) - 0.05) / 0.4); o2, x2, y2, z2 = forceps_display()
-            o = o * (1 - k) + o2 * k; x = x * (1 - k) + x2 * k; x /= np.linalg.norm(x); z = z * (1 - k) + z2 * k
-            z = z - x * np.dot(z, x); z /= np.linalg.norm(z); y = np.cross(z, x)
         place(forceps, o + x * away, x, y, z)
         a = math.atan(gap / 2 / FXS[-1])
         for ob, zs_ in jaws:
@@ -911,16 +1094,23 @@ P_START = to3(L.R * 0.93, z_mid(L.R * 0.93, TH_AX - 0.08), TH_AX - 0.08)
 FLAT_T = to3(1.75, z_mid(1.75, TH_AX), TH_AX); STEEP_T = to3(1.75, z_mid(1.75, TH_AX + np.pi / 2), TH_AX + np.pi / 2)
 INC_T = tuple(np.array([R_CAPD * 0.8 * math.cos(TH_INC), R_CAPD * 0.8 * math.sin(TH_INC), -0.6]))
 CTR = (0, 0, -0.45)
-CAM = [  # (этап, доля этапа), азимут, высота, расстояние, цель, up: 0 — ось глаза горизонтально, 1 — вверх
-    (('intro', 0), dict(az=AXD + 63, el=8, d=92, t=(0, 0, -14.5), up=0)), (('zoom', 0), dict(az=AXD + 33, el=6, d=90, t=(0, 0, -14.5), up=0)),
-    (('layers', 0), dict(az=AXD + 85, el=14, d=7.0, t=tuple(LAYER_T), up=1)), (('dock', 0), dict(az=AXD + 82, el=15, d=7.6, t=tuple(LAYER_T), up=1)),
-    # крупно: первые импульсы по одному у края лентикулы
-    (('post', 0), dict(az=AXD - 4, el=34, d=3.0, t=tuple(P_START), up=1)), (('post', 0.42), dict(az=AXD - 8, el=36, d=3.4, t=tuple(P_START), up=1)),
-    (('post', 0.78), dict(az=AXD + 40, el=12, d=8.6, t=CTR, up=1)),
-    (('side', 0), dict(az=AXD + 45, el=8, d=8.0, t=CTR, up=1)), (('cap', 0), dict(az=AXD + 45, el=10, d=6.8, t=(0, 0, -0.3), up=1)),
-    (('cap', 0.7), dict(az=AXD + 40, el=13, d=8.6, t=CTR, up=1)),
-    (('inc', 0), dict(az=A.inc_angle - 10, el=26, d=7.5, t=INC_T, up=1)), (('undock', 0), dict(az=A.inc_angle - 15, el=24, d=8.5, t=INC_T, up=1)),
-    # форма: профиль по каждому меридиану сбоку, с увеличением
+SIDE = AXD + 90          # смотрим перпендикулярно плоскому меридиану: в кадре его профиль
+INC_V = tuple(np.array([R_CAPD * math.cos(TH_INC), R_CAPD * math.sin(TH_INC), -0.45]))
+CAM = [  # (этап, доля этапа), азимут, высота, расстояние, цель, up: 1 — ось глаза вверх
+    # целый глаз на белом фоне, затем стыковка контактной линзы
+    (('intro', 0), dict(az=AXD + 70, el=24, d=34, t=(0, 0, -3.2), up=1)), (('dock', 0), dict(az=AXD + 82, el=16, d=30, t=(0, 0, -2.2), up=1)),
+    (('dock', 0.8), dict(az=SIDE, el=7, d=17, t=(0, 0, -0.4), up=1)),
+    # лазер по целой роговице, вид сбоку; сначала крупно первые импульсы у края
+    (('post', 0), dict(az=SIDE - 6, el=12, d=3.0, t=tuple(P_START), up=1)), (('post', 0.42), dict(az=SIDE - 9, el=14, d=3.4, t=tuple(P_START), up=1)),
+    (('post', 0.78), dict(az=SIDE, el=10, d=9.0, t=CTR, up=1)),
+    (('side', 0), dict(az=SIDE, el=8, d=8.4, t=CTR, up=1)), (('cap', 0), dict(az=SIDE + 2, el=9, d=8.0, t=(0, 0, -0.35), up=1)),
+    (('cap', 0.7), dict(az=SIDE, el=10, d=8.6, t=CTR, up=1)),
+    # лентикула проявляется (цвета меридианов) — лёгкий облёт
+    (('reveal', 0), dict(az=SIDE, el=10, d=8.6, t=CTR, up=1)), (('inc', 0), dict(az=SIDE - 30, el=20, d=9.0, t=CTR, up=1)),
+    # разрез доступа на 120°: крупно сверху-сбоку
+    (('inc', 0.25), dict(az=A.inc_angle + 180, el=50, d=6.2, t=INC_V, up=1)), (('undock', 0), dict(az=A.inc_angle + 175, el=48, d=7.5, t=INC_V, up=1)),
+    # роговица раскрывается по меридианам; профили крупно
+    (('section', 0), dict(az=AXD + 45, el=16, d=10.5, t=CTR, up=1)),
     (('form', 0), dict(az=AXD + 45, el=10, d=8.8, t=CTR, up=1)),
     (('form', 0.18), dict(az=AXD + 89, el=2, d=4.4, t=tuple(FLAT_T), up=1)), (('form', 0.44), dict(az=AXD + 87, el=3, d=4.6, t=tuple(FLAT_T), up=1)),
     (('form', 0.6), dict(az=AXD + 1, el=2, d=4.4, t=tuple(STEEP_T), up=1)), (('form', 0.86), dict(az=AXD + 3, el=3, d=4.6, t=tuple(STEEP_T), up=1)),
@@ -928,10 +1118,15 @@ CAM = [  # (этап, доля этапа), азимут, высота, расс
     (('spat_in', 0), dict(az=210, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), (('spat_ant', 0), dict(az=212, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
     (('spat_post', 0), dict(az=214, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), (('spat_out', 0), dict(az=215, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
     (('forc_in', 0), dict(az=215, el=46, d=14.5, t=(-1.0, 1.7, -0.3), up=1)), (('pull', 0), dict(az=215, el=44, d=14.5, t=(-1.0, 1.7, -0.3), up=1)),
-    (('show', 0), dict(az=220, el=32, d=22, t=(-2.9, 4.6, 1.8), up=1)),
-    # лентикула в пинцете: облёт сбоку — видна седловидная форма и цветные меридианы
-    (('show', 0.42), dict(az=215, el=4, d=10.5, t=(0, 0, DISPLAY_LIFT - 0.15), up=1)),
-    (None, dict(az=215 + 180, el=-3, d=10.5, t=(0, 0, DISPLAY_LIFT - 0.15), up=1))]
+    (('release', 0), dict(az=220, el=34, d=20, t=(-2.4, 4.0, 2.2), up=1)),
+    # без пинцета: крупно; вырез по меридианам, затем каждый профиль сбоку
+    (('show', 0), dict(az=215, el=30, d=12, t=(0, 0, DISPLAY_LIFT - 0.3), up=1)),
+    (('show', 0.18), dict(az=AXD + 45, el=20, d=9.0, t=(0, 0, DISPLAY_LIFT - 0.15), up=1)),
+    (('show', 0.34), dict(az=AXD + 90, el=1, d=5.6, t=tuple(to3(L.R * 0.5, DISPLAY_LIFT - 0.05, TH_AX)), up=1)),
+    (('show', 0.50), dict(az=AXD + 88, el=2, d=5.8, t=tuple(to3(L.R * 0.5, DISPLAY_LIFT - 0.05, TH_AX)), up=1)),
+    (('show', 0.62), dict(az=AXD + 2, el=1, d=5.6, t=tuple(to3(L.R * 0.5, DISPLAY_LIFT - 0.05, TH_AX + np.pi / 2)), up=1)),
+    (('show', 0.80), dict(az=AXD + 0, el=2, d=5.8, t=tuple(to3(L.R * 0.5, DISPLAY_LIFT - 0.05, TH_AX + np.pi / 2)), up=1)),
+    (None, dict(az=AXD + 45, el=24, d=10.5, t=(0, 0, DISPLAY_LIFT - 0.2), up=1))]
 
 
 def cam_pose(f):
@@ -955,11 +1150,11 @@ def cam_pose(f):
 cam_data = bpy.data.cameras.new('Cam'); cam_data.lens = 50; cam_data.sensor_width = 36; cam_data.clip_start = 0.05; cam_data.clip_end = 2000
 cam = bpy.data.objects.new('Camera', cam_data); scene.collection.objects.link(cam); scene.camera = cam
 LIGHTS = []
-for name, off, en, size, col in (('Key', (-0.55, 0.65, 0.55), 2.6, 0.5, (1, 0.97, 0.93)), ('Rim', (0.6, 0.55, -0.6), 2.2, 0.4, (0.8, 0.9, 1.0)),
-                                 ('Fill', (0.8, -0.25, 0.55), 0.8, 0.8, (1, 1, 1))):
-    ld = bpy.data.lights.new(name, 'AREA'); ld.color = col
+for name, off, en, size, col in (('Key', (-0.45, 0.75, 0.5), 1.8, 0.11, (1, 0.98, 0.95)), ('Rim', (0.6, 0.55, -0.6), 1.2, 0.4, (0.9, 0.95, 1.0)),
+                                 ('Fill', (0.8, -0.25, 0.55), 0.5, 0.8, (1, 1, 1))):
+    ld = bpy.data.lights.new(name, 'AREA'); ld.color = col; ld.shape = 'DISK'
     lo = bpy.data.objects.new(name, ld); scene.collection.objects.link(lo)
-    try: lo.visible_glossy = False; lo.visible_camera = False   # без огромных бликов-«зеркал» на роговице
+    try: lo.visible_glossy = (name == 'Key'); lo.visible_camera = False   # один небольшой «софтбокс» даёт блик на роговице
     except Exception: pass
     LIGHTS.append((lo, np.array(off) / np.linalg.norm(off), en, size))
 
@@ -979,15 +1174,15 @@ world = bpy.data.worlds.new('World'); scene.world = world
 try: world.use_nodes = True
 except Exception: pass
 bg = world.node_tree.nodes.get('Background') or world.node_tree.nodes.new('ShaderNodeBackground')
-bg.inputs['Color'].default_value = (0.20, 0.22, 0.26, 1.0); bg.inputs['Strength'].default_value = 1.0
+bg.inputs['Color'].default_value = (0.80, 0.81, 0.83, 1.0); bg.inputs['Strength'].default_value = 1.0   # светлая студия, как в примере
 
 # ================================================================ рендер
 r = scene.render; r.resolution_x, r.resolution_y = A.width, A.height; r.resolution_percentage = 100
-r.image_settings.file_format = 'PNG'; r.image_settings.color_mode = 'RGBA'; r.film_transparent = True
+r.image_settings.file_format = 'PNG'; r.image_settings.color_mode = 'RGBA'; r.film_transparent = False
 if A.engine == 'cycles':
     scene.render.engine = 'CYCLES'
     cy = scene.cycles; cy.samples = A.samples; cy.use_denoising = True; cy.device = 'CPU'
-    cy.transparent_max_bounces = 32; cy.max_bounces = 4; cy.diffuse_bounces = 2; cy.glossy_bounces = 2; cy.transmission_bounces = 2
+    cy.transparent_max_bounces = 32; cy.max_bounces = 10; cy.diffuse_bounces = 2; cy.glossy_bounces = 3; cy.transmission_bounces = 10
     cy.caustics_reflective = False; cy.caustics_refractive = False; cy.use_adaptive_sampling = True; cy.adaptive_threshold = 0.03
     scene.render.use_persistent_data = True
 else:
@@ -1096,7 +1291,7 @@ def proj(p):
 
 def collect_labels(f):
     out = []
-    if A.no_pointers: return out
+    if A.no_pointers or not A.text: return out
     for text, spec, anc, tp in LABELS:
         al = label_alpha(spec, f)
         if al <= 0: continue
@@ -1132,7 +1327,15 @@ def text_box(dr, xy, text, font, al, anchor='mm', pad=(9, 5)):
 
 def compose(raw_path, f, labels):
     im = Image.open(raw_path).convert('RGBA'); base = background(); base.alpha_composite(im)
+    if 'vig' not in _BG:   # мягкая виньетка светлой студии
+        yy, xx = np.mgrid[0:A.height, 0:A.width]
+        d = np.clip(np.hypot((xx - A.width * 0.5) / A.width, (yy - A.height * 0.5) / A.height) * 1.5, 0, 1)
+        _BG['vig'] = (1 - 0.13 * d ** 2)[..., None]
+    arr = np.asarray(base.convert('RGB'), np.float32) * _BG['vig']
+    base = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), 'RGB').convert('RGBA')
     clean = base.convert('RGB')
+    if not A.text:
+        return clean, clean
     ov = Image.new('RGBA', base.size, (0, 0, 0, 0)); dr = ImageDraw.Draw(ov)
     for text, a2, t2, al in labels:
         x0, y0, x1, y1 = dr.textbbox(tuple(t2), text, font=F_LAB, anchor='mm')
