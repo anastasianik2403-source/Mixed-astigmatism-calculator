@@ -1,0 +1,56 @@
+{
+ "params": {
+  "sph": 1.0,
+  "cyl": -4.0,
+  "axis": 0.0,
+  "oz": 6.7,
+  "tmin": 20.0,
+  "iop": 15.0,
+  "cct": 0.54,
+  "r_ant": 7.8,
+  "model": "nh",
+  "E": 1.0,
+  "nu": 0.45,
+  "mu": null,
+  "k1": 0.05,
+  "k2": 100.0,
+  "nxy": 8,
+  "nz": 2,
+  "no_prestress": false,
+  "out": "out/hyper_nh"
+ },
+ "material": {
+  "model": "nh",
+  "C10": 0.1724137931034483,
+  "D1": 0.5999999999999999,
+  "k1": 0.0,
+  "k2": 100.0,
+  "fib_dirs": [
+   "x",
+   "y"
+  ]
+ },
+ "results": {
+  "prestress": true,
+  "nxy": 8,
+  "nz": 2,
+  "dofs": 4335,
+  "inverse_iters": 5,
+  "apex_shift_um": -54.70466052147613,
+  "apex_iop_disp_pre_um": 105.15220012803653,
+  "apex_iop_disp_post_um": 116.10924845715462,
+  "K_flat_pre": 43.612262373854804,
+  "K_flat_post": 44.24433207846614,
+  "K_steep_pre": 43.6122623738548,
+  "K_steep_post": 41.39151429239262,
+  "Kgeo_flat": 0.8976063829787219,
+  "Kgeo_steep": -2.6928191489361715,
+  "vm_pre_kPa": 16.06659285994854,
+  "vm_post_kPa": 18.686866025984102,
+  "dK_flat_nodes": 0.6320697046113324,
+  "dK_steep_nodes": -2.220748081462176,
+  "dK_flat": 0.9463862621726931,
+  "dK_steep": -2.0397648616940143,
+  "time_s": 77.95832777023315
+ }
+}
