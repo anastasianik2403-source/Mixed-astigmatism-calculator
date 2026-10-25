@@ -1,0 +1,7 @@
+numpy
+scipy
+matplotlib
+scikit-fem>=12
+meshio
+# Для рендера без установленного Blender (Python должен совпадать с колесом bpy; для bpy 5.2 — Python 3.13):
+# bpy

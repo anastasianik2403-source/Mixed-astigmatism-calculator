@@ -1,0 +1,4 @@
+--
+ displacements (vx,vy,vz) for set APEX and time  0.1000000E+01
+
+      4063  8.793425E-18  3.016042E-18  9.443465E-02
