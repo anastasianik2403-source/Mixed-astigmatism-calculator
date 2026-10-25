@@ -38,7 +38,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--sph', type=float, default=1.0); ap.add_argument('--cyl', type=float, default=-4.0)
 ap.add_argument('--axis', type=float, default=0.0); ap.add_argument('--oz', type=float, default=6.7)
 ap.add_argument('--tmin', type=float, default=20.0)
-ap.add_argument('--exag', type=float, default=2.0, help='увеличение толщины лентикулы для наглядности')
+ap.add_argument('--exag', type=float, default=3.0, help='увеличение толщины лентикулы для наглядности')
 ap.add_argument('--cap', type=float, default=120.0, help='толщина колпачка, мкм'); ap.add_argument('--cap-d', type=float, default=7.5, help='диаметр колпачка, мм')
 ap.add_argument('--inc-angle', type=float, default=120.0, help='положение разреза доступа, градусы (TABO)')
 ap.add_argument('--inc-width', type=float, default=2.5, help='длина разреза доступа (хорда), мм')
@@ -48,6 +48,7 @@ ap.add_argument('--engine', choices=['eevee', 'cycles'], default='cycles'); ap.a
 ap.add_argument('--out', default='out/smile'); ap.add_argument('--only-frame', type=int, default=None)
 ap.add_argument('--frames', default=None, help='диапазон 1-200 или список 10,250,600'); ap.add_argument('--step', type=int, default=1)
 ap.add_argument('--font', default=None); ap.add_argument('--video', action='store_true')
+ap.add_argument('--text', action='store_true', help='наложить заголовки этапов и подписи (по умолчанию — без текста)')
 ap.add_argument('--save-blend', default=None)
 ap.add_argument('--no-pointers', action='store_true', help='без подписей-выносок (структуры глаза, инструменты); заголовки этапов остаются')
 ap.add_argument('--overlay-only', action='store_true', help='не рендерить: заново наложить подписи на готовые кадры <out>/raw')
@@ -66,7 +67,7 @@ RS, TS = 11.8, 0.7                          # склера: наружный р�
 Z_A = -R_ANT + R_ANT * math.cos(PSI_L)
 ZS = Z_A - math.sqrt(RS ** 2 - R_LIMB ** 2)  # центр склеральной сферы
 RSI = RS - TS
-TH_C = math.radians(210.0)                   # направление вырезанного сектора (к камере)
+TH_C = math.radians(A.axis + 45.0)           # вырезанный сектор между плоским (ось) и крутым (ось+90°) меридианами
 
 L = Lenticule(A.sph, A.cyl, A.axis, A.oz, A.tmin)
 CAP = A.cap / 1000.0
@@ -352,7 +353,9 @@ M = {
     'steel': mat_basic('Steel', lin((205, 208, 214)), 1.0, rough=0.22, metal=1.0),
     'steel_dark': mat_basic('SteelDark', lin((120, 124, 132)), 1.0, rough=0.35, metal=1.0),
     'spot': mat_basic('Spot', (1.0, 0.75, 0.85), 1.0, emit=40.0),
-    'obl': mat_attr_alpha('OBL', lin((236, 242, 250)), 'cut', base_alpha=0.5, emit=0.12, noise_scale=45.0),
+    'obl': mat_attr_alpha('OBL', lin((236, 242, 250)), 'cut', base_alpha=0.2, emit=0.10, noise_scale=45.0),
+    'flat': mat_basic('MeridianFlat', lin((46, 204, 113)), 1.0, rough=0.4, emit=1.2),
+    'steep': mat_basic('MeridianSteep', lin((239, 68, 68)), 1.0, rough=0.4, emit=1.2),
     'lent': mat_lenticule(),
     'beam': mat_beam(),
 }
@@ -448,10 +451,39 @@ for zs_ in (+1, -1):
     set_mesh(ob, Vj, Pj, Mj, sharp=25); ob.parent = forceps; jaws.append((ob, zs_))
 
 
+# пузырьки лазера: вершины сетки -> сферы (узел «Mesh to Points»), радиус и свечение — атрибуты вершин
+def mat_bubble():
+    m = mat_basic('Bubble', lin((236, 244, 255)), 0.92, rough=0.15, coat=0.6, emit=0.0)
+    nt = m.node_tree; b = nt.nodes[m['bsdf']]
+    at = nt.nodes.new('ShaderNodeAttribute'); at.attribute_type = 'GEOMETRY'; at.attribute_name = 'glow'
+    ma = nt.nodes.new('ShaderNodeMath'); ma.operation = 'MULTIPLY_ADD'; ma.inputs[1].default_value = 7.0; ma.inputs[2].default_value = 0.18
+    nt.links.new(at.outputs['Fac'], ma.inputs[0])
+    for k in ('Emission Color', 'Emission'):
+        if k in b.inputs: b.inputs[k].default_value = (0.80, 0.90, 1.0, 1); break
+    nt.links.new(ma.outputs['Value'], b.inputs['Emission Strength'])
+    return m
+
+
+M['bubble'] = mat_bubble()
+bub_obj = new_obj('Bubbles', [M['bubble']])
+gn = bpy.data.node_groups.new('BubblePoints', 'GeometryNodeTree')
+gn.interface.new_socket(name='Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+gn.interface.new_socket(name='Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+gi = gn.nodes.new('NodeGroupInput'); go = gn.nodes.new('NodeGroupOutput')
+m2p = gn.nodes.new('GeometryNodeMeshToPoints'); na = gn.nodes.new('GeometryNodeInputNamedAttribute'); na.data_type = 'FLOAT'
+na.inputs['Name'].default_value = 'rad'
+sm = gn.nodes.new('GeometryNodeSetMaterial'); sm.inputs['Material'].default_value = M['bubble']
+gn.links.new(gi.outputs[0], m2p.inputs['Mesh']); gn.links.new(na.outputs['Attribute'], m2p.inputs['Radius'])
+gn.links.new(m2p.outputs['Points'], sm.inputs['Geometry']); gn.links.new(sm.outputs['Geometry'], go.inputs[0])
+bub_obj.modifiers.new('pts', 'NODES').node_group = gn
+
+mer_obj = new_obj('Meridians', [M['flat'], M['steep']])
+
+
 # ================================================================ таймлайн
-SEGS = [('intro', 132), ('zoom', 84), ('layers', 60), ('dock', 48), ('post', 96), ('side', 30), ('cap', 96), ('inc', 30),
-        ('undock', 40), ('close', 60), ('spat_in', 24), ('spat_ant', 66), ('spat_post', 66), ('spat_out', 24),
-        ('forc_in', 40), ('pull', 130), ('show', 90)]
+SEGS = [('intro', 96), ('zoom', 72), ('layers', 48), ('dock', 40), ('post', 168), ('side', 48), ('cap', 144), ('inc', 60),
+        ('undock', 36), ('form', 132), ('close', 54), ('spat_in', 20), ('spat_ant', 56), ('spat_post', 56), ('spat_out', 20),
+        ('forc_in', 36), ('pull', 110), ('show', 144)]
 SEGS = [(n, max(6, int(round(k * A.speed)))) for n, k in SEGS]
 START = {}; acc = 1
 for n, k in SEGS: START[n] = acc; acc += k
@@ -520,20 +552,19 @@ T_EDGE_INC = float(L.thickness(L.R * 0.999 * math.cos(TH_INC), L.R * 0.999 * mat
 H_MID = -A.exag * T_EDGE_INC / 2000.0
 P_TOTAL = S_INC + S_LEAD + 2.2
 S_GRIP = S_LEAD - 0.35
+GAP_CLOSED = A.exag * T_EDGE_INC / 1000.0 + 0.012     # бранши смыкаются на краю лентикулы
 
 
 def forceps_state(f):
     """(s кончика, раскрытие кончиков мм, видимость, отвод мм)"""
     if during('forc_in', f):
         u = prog('forc_in', f)
-        s = S_GRIP + (S_INC + 5.0 - S_GRIP) * (1 - ss(u / 0.7)); gap = 0.75 if u < 0.72 else 0.75 - (0.75 - 0.06) * ss((u - 0.72) / 0.25)
+        s = S_GRIP + (S_INC + 5.0 - S_GRIP) * (1 - ss(u / 0.7)); gap = 0.75 if u < 0.72 else 0.75 - (0.75 - GAP_CLOSED) * ss((u - 0.72) / 0.25)
         return s, gap, True, 0.0
     if during('pull', f):
-        return S_GRIP + P_TOTAL * ss(prog('pull', f)), 0.06, True, 0.0
-    if during('show', f):
-        u = prog('show', f)
-        gap = 0.06 + 0.8 * ss((u - 0.22) / 0.1); away = 22.0 * ss((u - 0.3) / 0.3)
-        return S_GRIP + P_TOTAL, gap, u < 0.62, away
+        return S_GRIP + P_TOTAL * ss(prog('pull', f)), GAP_CLOSED, True, 0.0
+    if during('show', f) or f > NF - 1:
+        return S_GRIP + P_TOTAL, GAP_CLOSED, True, 0.0
     return 0, 0, False, 0
 
 
@@ -589,29 +620,73 @@ def spat_geometry(pl, Lin, psi):
     return np.array(pts), np.array(rad), Q0, o
 
 
-# ---------------------------------------------------------------- лазер
-N_POST, N_CAP = 8, 9
+# ---------------------------------------------------------------- лазер: пузырьки по одному
+BUB_PITCH, BUB_STEP, BUB_R = 0.17, 0.065, 0.021   # шаг спирали, шаг импульсов, радиус пузырька, мм (схема: реально — микрометры)
+TH_AX = math.radians(A.axis)                       # спирали начинаются на плоском меридиане (плоскость среза)
+
+
+def bottom_xyz(r, th, off=0.0):
+    r = np.asarray(r, float); th = np.broadcast_to(np.asarray(th, float), r.shape)
+    t = L.thickness(np.minimum(r, L.R * 0.9999) * np.cos(th), np.minimum(r, L.R * 0.9999) * np.sin(th)) * A.exag / 1000.0 + off
+    zt = -R_ANT + np.sqrt(R_LT ** 2 - r ** 2); k = (R_LT - t) / R_LT
+    return np.column_stack([r * k * np.cos(th), r * k * np.sin(th), -R_ANT + (zt + R_ANT) * k])
+
+
+def cap_xyz(r, th, rad=R_ANT - CAP):
+    r = np.asarray(r, float); th = np.broadcast_to(np.asarray(th, float), r.shape)
+    return np.column_stack([r * np.cos(th), r * np.sin(th), -R_ANT + np.sqrt(rad ** 2 - r ** 2)])
+
+
+def spiral(r0, r1):
+    """Спираль от радиуса r0 к r1 (угол убывает от плоского меридиана); точки через BUB_STEP по дуге."""
+    turns = abs(r1 - r0) / BUB_PITCH; phi = np.linspace(0, 2 * np.pi * turns, int(turns * 4000) + 2)
+    r = r0 + (r1 - r0) * phi / phi[-1]
+    ds = np.hypot(np.diff(r), r[:-1] * np.diff(phi)); sarc = np.concatenate([[0], np.cumsum(ds)])
+    k = np.searchsorted(sarc, np.arange(0, sarc[-1], BUB_STEP))
+    return r[k], TH_AX - phi[k], phi[k] / (2 * np.pi)
+
+
+def build_bubbles():
+    B = {}
+    r, th, q = spiral(L.R * 0.995, 0.0); B['post'] = dict(P=bottom_xyz(r, th, 0.006), r=r, th=th, q=q, k=7.5)
+    rows = []
+    for fr in np.linspace(0.12, 0.88, 5):
+        n = int(2 * np.pi * L.R / BUB_STEP); th = TH_AX - np.arange(n) * 2 * np.pi / n
+        bt = bottom_xyz(np.full(n, L.R), th); tp = cap_xyz(np.full(n, L.R), th, R_LT)
+        rows.append((bt + (tp - bt) * fr, th))
+    B['side'] = dict(P=np.vstack([p for p, _ in rows]), r=np.full(sum(len(t) for _, t in rows), L.R), th=np.concatenate([t for _, t in rows]), k=2.0)
+    r, th, q = spiral(0.0, R_CAPD); B['cap'] = dict(P=cap_xyz(r, th, R_ANT - CAP + 0.006), r=r, th=th, q=q, k=7.0)
+    psi = math.asin(R_CAPD / R_ANT); n = int(2 * HALF_INC * R_CAPD / BUB_STEP) + 1; P, T = [], []
+    for row, fr in enumerate(np.linspace(0.85, 0.15, 4)):
+        th = TH_INC - HALF_INC + 2 * HALF_INC * np.linspace(0, 1, n)[:: 1 if row % 2 == 0 else -1]; d = CAP * fr
+        P.append(C + (R_ANT - d) * np.column_stack([np.sin(psi) * np.cos(th), np.sin(psi) * np.sin(th), np.full(n, np.cos(psi))])); T.append(th)
+    B['inc'] = dict(P=np.vstack(P), r=np.full(4 * n, R_CAPD), th=np.concatenate(T), k=1.5)
+    for k_, b in B.items():
+        N = len(b['P']); kk = b['k']; i = np.arange(N)
+        b['u'] = np.log1p(i / N * np.expm1(kk)) / kk        # момент импульса i в долях этапа: сначала медленно, потом быстрее
+    return B
+
+
+BUB = build_bubbles()
+
+
+def fired(k_, f):
+    """Сколько пузырьков этапа уже поставлено и «возраст» каждого в кадрах."""
+    b = BUB[k_]
+    if f < START[k_]: return 0, None
+    u = prog(k_, f); n = len(b['P']) if after(k_, f) else int(np.searchsorted(b['u'], u, side='right'))
+    age = f - (START[k_] + b['u'][:n] * LEN[k_])
+    return n, age
 
 
 def laser_state(f):
-    """Положение фокуса (3D) или None, и прогресс резов."""
+    """Положение фокуса (последний импульс) или None, и прогресс резов."""
     pr = {k: prog(k, f) for k in ('post', 'side', 'cap', 'inc')}
-    spot = None; th0 = TH_INC
-    if during('post', f):
-        u = pr['post']; q = u * N_POST; r = L.R * (1 - u); th = th0 - 2 * np.pi * q
-        spot = to3(*lent_bottom(th, np.array([r]))[0], th)
-    elif during('side', f):
-        u = pr['side']; th = th0 + 2 * np.pi * 5 * u
-        bt = lent_bottom(th, np.array([L.R]), 0)[0]; tp = sphere_pts(R_LT, [L.R])[0]
-        spot = to3(*(bt + (tp - bt) * u), th)
-    elif during('cap', f):
-        u = pr['cap']; q = u * N_CAP; th = th0 + 2 * np.pi * q
-        spot = to3(*sphere_pts(R_ANT - CAP, [R_CAPD * u])[0], th)
-    elif during('inc', f):
-        u = pr['inc']; rows = 4; row = min(int(u * rows), rows - 1); fr = u * rows - row
-        fr = fr if row % 2 == 0 else 1 - fr
-        th = TH_INC - HALF_INC + 2 * HALF_INC * fr; d = CAP * (1 - (row + 0.5) / rows)
-        psi = math.asin(R_CAPD / R_ANT); spot = C + (R_ANT - d) * np.array([math.sin(psi) * math.cos(th), math.sin(psi) * math.sin(th), math.cos(psi)])
+    spot = None
+    for k_ in ('post', 'side', 'cap', 'inc'):
+        if during(k_, f):
+            n, _ = fired(k_, f); spot = BUB[k_]['P'][max(n - 1, 0)]
+            if 'q' in BUB[k_]: pr[k_ + '_q'] = BUB[k_]['q'][max(n - 1, 0)]
     return spot, pr
 
 
@@ -665,7 +740,7 @@ THK_FULL = lent_thk(V_FULL)
 
 
 def spiral_time(r, th, pitch, th_start, inward, R0):
-    fr = (((th_start - th) if inward else (th - th_start)) / (2 * np.pi)) % 1.0
+    fr = ((th_start - th) / (2 * np.pi)) % 1.0
     base = (R0 - r) / pitch if inward else r / pitch
     return fr + np.round(base - fr)
 
@@ -674,13 +749,13 @@ def update_masks(f, pr):
     for k in ('post', 'side', 'cap', 'inc'):
         V, P, Mt, a, tt = _cache[k]
         if k == 'post':
-            qv = spiral_time(a, tt, L.R / N_POST, TH_INC, True, L.R); cut = np.clip((pr['post'] * N_POST - qv) / 0.15 + 0.5, 0, 1)
+            qv = spiral_time(a, tt, BUB_PITCH, TH_AX, True, L.R); cut = np.clip((pr.get('post_q', 0 if pr['post'] <= 0 else 1e9) - qv) / 0.3 + 0.5, 0, 1)
             if pr['post'] >= 1: cut[:] = 1
             clear = spat_cleared('post', f, a * np.cos(tt), a * np.sin(tt))
         elif k == 'side':
             cut = np.clip((pr['side'] * 1.05 - a) / 0.05 + 0.5, 0, 1); clear = np.full(len(a), 1.0 if after('spat_post', f) else (0.6 * prog('spat_post', f)))
         elif k == 'cap':
-            qv = spiral_time(a, tt, R_CAPD / N_CAP, TH_INC, False, R_CAPD); cut = np.clip((pr['cap'] * N_CAP - qv) / 0.15 + 0.5, 0, 1)
+            qv = spiral_time(a, tt, BUB_PITCH, TH_AX, False, R_CAPD); cut = np.clip((pr.get('cap_q', 0 if pr['cap'] <= 0 else 1e9) - qv) / 0.3 + 0.5, 0, 1)
             if pr['cap'] >= 1: cut[:] = 1
             clear = spat_cleared('ant', f, a * np.cos(tt), a * np.sin(tt))
         else:
@@ -693,21 +768,77 @@ def update_masks(f, pr):
         obl[k].hide_render = bool(cut.max() <= 0.01)
 
 
+# цветные меридианы на лентикуле: плоский (ось, ось+180°) — зелёный, крутой (ось±90°) — красный
+def build_meridians():
+    Vs_, Q, T, Mi = [], [], [], []; off = 0
+    for j in range(4):
+        th = TH_AX + j * np.pi / 2
+        pr_ = lent_profile(th)
+        pts = np.array([to3(r_, z_, th) for r_, z_ in pr_])
+        V_, (q_, t_, _), _ = tube(pts, 0.011, 8, cap_tip=False)
+        Vs_.append(V_); Q.append(q_ + off); T.append(t_ + off); off += len(V_)
+    mats = np.concatenate([np.full(len(q), j % 2) for j, q in enumerate(Q)] + [np.full(len(t), j % 2) for j, t in enumerate(T)])
+    return np.vstack(Vs_), (np.vstack(Q), np.vstack(T), []), mats
+
+
+MER_V, MER_P, MER_M = build_meridians()
+
+
+def update_bubbles(f, W):
+    if f < START['post'] or f >= START['forc_in']:
+        bub_obj.hide_render = True; return
+    th0, th1 = wedge_range(max(W - 1.2, 0.0)) if W > 0.01 else (0.0, 2 * np.pi)
+    Ps, rads, glows = [], [], []
+    fade = 1 - 0.45 * ss(prog('close', f))
+    for k_ in ('post', 'side', 'cap', 'inc'):
+        n, age = fired(k_, f)
+        if n == 0: continue
+        b = BUB[k_]; P = b['P'][:n]; th = b['th'][:n]
+        keep = (((th - th0) % (2 * np.pi)) <= (th1 - th0) + 1e-9) if W > 0.01 else np.ones(n, bool)
+        rad = BUB_R * (0.45 + 0.55 * np.clip(age / 2.0, 0, 1)) * fade
+        if k_ in ('post', 'cap'):
+            clr = spat_cleared('post' if k_ == 'post' else 'ant', f, P[:, 0], P[:, 1]); rad = rad * (1 - clr)
+        elif k_ == 'side':
+            rad = rad * (1 - ss(prog('spat_post', f)))
+        keep &= rad > 0.002
+        Ps.append(P[keep]); rads.append(rad[keep]); glows.append(np.exp(-np.maximum(age[keep], 0) / 2.5))
+    if not Ps or sum(len(p) for p in Ps) == 0:
+        bub_obj.hide_render = True; return
+    V = np.vstack(Ps); me = bub_obj.data; me.clear_geometry()
+    me.vertices.add(len(V)); me.vertices.foreach_set('co', V.astype(np.float32).ravel()); me.update()
+    for name, arr in (('rad', np.concatenate(rads)), ('glow', np.concatenate(glows))):
+        at = me.attributes.new(name=name, type='FLOAT', domain='POINT'); at.data.foreach_set('value', arr.astype(np.float32))
+    me.update(); bub_obj.hide_render = False
+
+
 def place(obj, origin, x, y, z):
     obj.matrix_world = Matrix(((x[0], y[0], z[0], origin[0]), (x[1], y[1], z[1], origin[1]), (x[2], y[2], z[2], origin[2]), (0, 0, 0, 1)))
 
 
-DISPLAY_LIFT = 3.1
+DISPLAY_LIFT = 3.4
+DISP_C0 = np.array([0, 0, -0.1])
+G_REST = to3(*lent_profile(TH_INC)[33], TH_INC) * 0.5 + to3(*lent_profile(TH_INC)[37], TH_INC) * 0.5   # край у разреза, середина толщины
 
 
-def display_pose(V, f):
-    u = prog('show', f)
-    ax = np.array([-math.sin(math.radians(206)), math.cos(math.radians(206)), 0.0])
-    spin = math.radians(50) * ss((u - 0.6) / 0.4)
-    Rs = Matrix.Rotation(spin, 3, 'Z'); Rt = Matrix.Rotation(math.radians(18), 3, Vector(ax))
-    Rm = np.array(Rt @ Rs)
-    c0 = np.array([0, 0, -0.1])
-    return (V - c0) @ Rm.T + np.array([0, 0, DISPLAY_LIFT])
+EXAG_SHOW = 8.0   # в конце толщина лентикулы плавно увеличивается ×3 → ×8, чтобы седловидная форма читалась при облёте
+
+
+def thick_scale(V, k):
+    q = np.asarray(V) - C; rad = np.linalg.norm(q, axis=1, keepdims=True)
+    return C + q / rad * (R_LT + (rad - R_LT) * k)
+
+
+def display_pose(V, f=None):
+    """Извлечённая лентикула в пинцете: над глазом, горизонтально (камера облетает её вокруг)."""
+    if f is not None and f >= START['show']:
+        V = thick_scale(V, 1 + (EXAG_SHOW / A.exag - 1) * ss((prog('show', f) - 0.45) / 0.2))
+    return (np.asarray(V) - DISP_C0) + np.array([0, 0, DISPLAY_LIFT])
+
+
+def forceps_display():
+    tip = display_pose(G_REST[None])[0]
+    x = D_INC * math.cos(math.radians(12)) + EZ * math.sin(math.radians(12)); z = EZ - x * np.dot(EZ, x); z /= np.linalg.norm(z)
+    return tip, x, np.cross(z, x), z
 
 
 def frame_state(f):
@@ -718,15 +849,18 @@ def frame_state(f):
     update_masks(f, pr)
     # контактная линза
     dz = dock_of(f)
-    for ob in (glass_obj, house_obj):
-        ob.location = (0, 0, dz); ob.hide_render = bool(dz > 13.5)
+    show_glass = during('dock', f) or during('undock', f) or (during('post', f) and f < START['post'] + 10)
+    glass_obj.location = (0, 0, dz); glass_obj.hide_render = bool(dz > 13.5 or not show_glass)   # на крупных планах лазера не мешает
+    house_obj.hide_render = True
     # лазер
     on = spot is not None
     for ob in (beam_obj, spot_obj, halo_obj):
         ob.hide_render = not on
         if on: ob.location = tuple(spot)
+    # пузырьки и меридианы
+    update_bubbles(f, W)
     # лентикула
-    a_l = ss(prog('undock', f) / 0.8)
+    a_l = ss(prog('form', f) / 0.15)
     lent_obj.hide_render = bool(a_l <= 0.001)
     LENT_BSDF.inputs['Alpha'].default_value = float(a_l)
     if f >= START['forc_in']:
@@ -734,11 +868,18 @@ def frame_state(f):
             fs = forceps_state(f); pull = (fs[0] - S_GRIP) if during('pull', f) else 0.0
             V = lent_deform(V_FULL, pull) if pull > 0 else V_FULL
         else:
-            Vp = lent_deform(V_FULL, P_TOTAL); Vd = display_pose(V_FULL, f)
-            k = ss((prog('show', f) - 0.25) / 0.45); V = Vp * (1 - k) + Vd * k
+            k = ss((prog('show', f) - 0.05) / 0.4)
+            V = lent_deform(V_FULL, P_TOTAL) * (1 - k) + display_pose(V_FULL, f) * k
         set_mesh(lent_obj, V, P_FULL, M_FULL, attrs={'thk': THK_FULL}, sharp=35)
     else:
         Vl, P, Mt, thk = _cache['lent']; set_mesh(lent_obj, Vl, P, Mt, attrs={'thk': thk}, sharp=35)
+    mer_obj.hide_render = f < START['post']
+    if not mer_obj.hide_render:
+        if f < START['forc_in'] or not (during('pull', f) or f >= START['show']): Vm = MER_V
+        elif during('pull', f): Vm = lent_deform(MER_V, forceps_state(f)[0] - S_GRIP)
+        else:
+            k = ss((prog('show', f) - 0.05) / 0.4); Vm = lent_deform(MER_V, P_TOTAL) * (1 - k) + display_pose(MER_V, f) * k
+        set_mesh(mer_obj, Vm, MER_P, MER_M, sharp=0)
     # шпатель
     pl, Lin, psi, vis = spat_state(f)
     spat_obj.hide_render = not vis
@@ -750,6 +891,10 @@ def frame_state(f):
     for ob, _ in jaws: ob.hide_render = not vis
     if vis:
         o, x, y, z = forceps_frame(s)
+        if f >= START['show']:   # пинцет держит лентикулу и переносит её в положение показа
+            k = ss((prog('show', f) - 0.05) / 0.4); o2, x2, y2, z2 = forceps_display()
+            o = o * (1 - k) + o2 * k; x = x * (1 - k) + x2 * k; x /= np.linalg.norm(x); z = z * (1 - k) + z2 * k
+            z = z - x * np.dot(z, x); z /= np.linalg.norm(z); y = np.cross(z, x)
         place(forceps, o + x * away, x, y, z)
         a = math.atan(gap / 2 / FXS[-1])
         for ob, zs_ in jaws:
@@ -760,19 +905,37 @@ def frame_state(f):
 
 # ================================================================ камера и свет
 LAYER_T = to3(1.75, -0.32, TH_C - math.radians(45))
-CAM = [('intro', dict(az=228, el=8, d=92, t=(0, 0, -14.5), up=0)), ('zoom', dict(az=198, el=6, d=90, t=(0, 0, -14.5), up=0)),
-       ('layers', dict(az=250, el=14, d=7.0, t=tuple(LAYER_T), up=1)), ('dock', dict(az=247, el=15, d=7.4, t=tuple(LAYER_T), up=1)),
-       ('post', dict(az=220, el=38, d=13.5, t=(0, 0, -0.6), up=1)), ('side', dict(az=217, el=36, d=13.0, t=(0, 0, -0.6), up=1)),
-       ('cap', dict(az=215, el=37, d=13.0, t=(0, 0, -0.6), up=1)), ('inc', dict(az=212, el=38, d=13.5, t=(0, 0, -0.6), up=1)),
-       ('undock', dict(az=208, el=36, d=15, t=(0, 0, -0.6), up=1)), ('close', dict(az=205, el=34, d=16, t=(0, 0, -0.5), up=1)),
-       ('spat_in', dict(az=210, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), ('spat_ant', dict(az=212, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
-       ('spat_post', dict(az=214, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), ('spat_out', dict(az=215, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
-       ('forc_in', dict(az=215, el=46, d=14.5, t=(-1.0, 1.7, -0.3), up=1)), ('pull', dict(az=215, el=44, d=14.5, t=(-1.0, 1.7, -0.3), up=1)),
-       ('show', dict(az=220, el=32, d=22, t=(-2.9, 4.6, 1.8), up=1)), (None, dict(az=206, el=28, d=21, t=(0, 0, 2.4), up=1))]
+AXD = A.axis
+z_mid = lambda r, th: float(bottom_xyz(np.array([r]), th)[0, 2] * 0.5 + cap_xyz(np.array([r]), th, R_LT)[0, 2] * 0.5)
+P_START = to3(L.R * 0.93, z_mid(L.R * 0.93, TH_AX - 0.08), TH_AX - 0.08)
+FLAT_T = to3(1.75, z_mid(1.75, TH_AX), TH_AX); STEEP_T = to3(1.75, z_mid(1.75, TH_AX + np.pi / 2), TH_AX + np.pi / 2)
+INC_T = tuple(np.array([R_CAPD * 0.8 * math.cos(TH_INC), R_CAPD * 0.8 * math.sin(TH_INC), -0.6]))
+CTR = (0, 0, -0.45)
+CAM = [  # (этап, доля этапа), азимут, высота, расстояние, цель, up: 0 — ось глаза горизонтально, 1 — вверх
+    (('intro', 0), dict(az=AXD + 63, el=8, d=92, t=(0, 0, -14.5), up=0)), (('zoom', 0), dict(az=AXD + 33, el=6, d=90, t=(0, 0, -14.5), up=0)),
+    (('layers', 0), dict(az=AXD + 85, el=14, d=7.0, t=tuple(LAYER_T), up=1)), (('dock', 0), dict(az=AXD + 82, el=15, d=7.6, t=tuple(LAYER_T), up=1)),
+    # крупно: первые импульсы по одному у края лентикулы
+    (('post', 0), dict(az=AXD - 4, el=34, d=3.0, t=tuple(P_START), up=1)), (('post', 0.42), dict(az=AXD - 8, el=36, d=3.4, t=tuple(P_START), up=1)),
+    (('post', 0.78), dict(az=AXD + 40, el=12, d=8.6, t=CTR, up=1)),
+    (('side', 0), dict(az=AXD + 45, el=8, d=8.0, t=CTR, up=1)), (('cap', 0), dict(az=AXD + 45, el=10, d=6.8, t=(0, 0, -0.3), up=1)),
+    (('cap', 0.7), dict(az=AXD + 40, el=13, d=8.6, t=CTR, up=1)),
+    (('inc', 0), dict(az=A.inc_angle - 10, el=26, d=7.5, t=INC_T, up=1)), (('undock', 0), dict(az=A.inc_angle - 15, el=24, d=8.5, t=INC_T, up=1)),
+    # форма: профиль по каждому меридиану сбоку, с увеличением
+    (('form', 0), dict(az=AXD + 45, el=10, d=8.8, t=CTR, up=1)),
+    (('form', 0.18), dict(az=AXD + 89, el=2, d=4.4, t=tuple(FLAT_T), up=1)), (('form', 0.44), dict(az=AXD + 87, el=3, d=4.6, t=tuple(FLAT_T), up=1)),
+    (('form', 0.6), dict(az=AXD + 1, el=2, d=4.4, t=tuple(STEEP_T), up=1)), (('form', 0.86), dict(az=AXD + 3, el=3, d=4.6, t=tuple(STEEP_T), up=1)),
+    (('close', 0), dict(az=AXD + 30, el=12, d=9.5, t=CTR, up=1)),
+    (('spat_in', 0), dict(az=210, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), (('spat_ant', 0), dict(az=212, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
+    (('spat_post', 0), dict(az=214, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)), (('spat_out', 0), dict(az=215, el=50, d=16, t=(-0.5, 0.8, -0.4), up=1)),
+    (('forc_in', 0), dict(az=215, el=46, d=14.5, t=(-1.0, 1.7, -0.3), up=1)), (('pull', 0), dict(az=215, el=44, d=14.5, t=(-1.0, 1.7, -0.3), up=1)),
+    (('show', 0), dict(az=220, el=32, d=22, t=(-2.9, 4.6, 1.8), up=1)),
+    # лентикула в пинцете: облёт сбоку — видна седловидная форма и цветные меридианы
+    (('show', 0.42), dict(az=215, el=4, d=10.5, t=(0, 0, DISPLAY_LIFT - 0.15), up=1)),
+    (None, dict(az=215 + 180, el=-3, d=10.5, t=(0, 0, DISPLAY_LIFT - 0.15), up=1))]
 
 
 def cam_pose(f):
-    keys = [(START[n] if n else NF + 1, p) for n, p in CAM]
+    keys = [((START[n[0]] + n[1] * LEN[n[0]]) if n else NF + 1, p) for n, p in CAM]
     for (f0, p0), (f1, p1) in zip(keys[:-1], keys[1:]):
         if f < f1 or f1 == NF + 1:
             k = float(ss((f - f0) / max(1, f1 - f0))); break
@@ -907,6 +1070,7 @@ TITLES = {
     'cap': ('Шаг 4. Передняя поверхность — граница колпачка', 'глубина ' + fmt(A.cap, 0) + ' мкм, спираль от центра к периферии, Ø ' + fmt(A.cap_d) + ' мм'),
     'inc': ('Шаг 5. Разрез доступа', fmt(A.inc_width) + ' мм, на ' + fmt(A.inc_angle, 0) + '°'),
     'undock': ('Лентикула сформирована', 'вакуум снят, контактная линза отведена'),
+    'form': ('Профиль лентикулы', 'зелёный — плоский меридиан, красный — крутой: седловидная форма'),
     'close': ('Форма лентикулы', 'торическая: Sph ' + ('+' if L.sph >= 0 else '') + fmt(L.sph, 2) + ' / Cyl ' + fmt(L.cyl, 2) + ' × ' + fmt(L.axis, 0) + '°'),
     'spat_in': ('Шаг 6. Разделение слоёв шпателем', 'сначала передняя поверхность'), 'spat_ant': ('Шаг 6. Разделение слоёв шпателем', 'сначала передняя поверхность'),
     'spat_post': ('Шаг 6. Разделение слоёв шпателем', 'затем задняя поверхность'), 'spat_out': ('Шаг 6. Разделение слоёв шпателем', 'затем задняя поверхность'),
@@ -1026,7 +1190,8 @@ for f in frames:
     elif not os.path.exists(raw):
         continue
     clean, lab = compose(raw, f, labels)
-    clean.save(os.path.join(OUT, 'clean', f'f{f:04d}.png')); lab.save(os.path.join(OUT, 'lab', f'f{f:04d}.png'))
+    clean.save(os.path.join(OUT, 'clean', f'f{f:04d}.png'))
+    if A.text: lab.save(os.path.join(OUT, 'lab', f'f{f:04d}.png'))
     print(f'кадр {f}/{NF} [{seg_of(f)[0]}] {time.time() - t0:.1f} с (сцена {t1 - t0:.1f} с)', flush=True)
 print(f'готово за {(time.time() - t_all) / 60:.1f} мин', flush=True)
 
@@ -1035,7 +1200,8 @@ if A.video and A.only_frame is None and shutil.which('ffmpeg'):
     def mk(src, dst):
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', f'{fr:g}', '-pattern_type', 'glob', '-i', f'{OUT}/{src}/f*.png',
                         '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', dst], check=True)
-    mk('lab', OUT + '.mp4'); mk('clean', OUT + '_bez_podpisej.mp4')
+    mk('clean', OUT + '.mp4')
+    if A.text: mk('lab', OUT + '_s_podpisyami.mp4')
     gw = min(A.width, 640)
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', OUT + '.mp4', '-vf',
                     f'fps=12,scale={gw}:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a', OUT + '.gif'], check=True)
