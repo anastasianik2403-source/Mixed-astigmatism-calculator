@@ -49,6 +49,7 @@ ap.add_argument('--out', default='out/smile'); ap.add_argument('--only-frame', t
 ap.add_argument('--frames', default=None, help='диапазон 1-200 или список 10,250,600'); ap.add_argument('--step', type=int, default=1)
 ap.add_argument('--font', default=None); ap.add_argument('--video', action='store_true')
 ap.add_argument('--save-blend', default=None)
+ap.add_argument('--no-pointers', action='store_true', help='без подписей-выносок (структуры глаза, инструменты); заголовки этапов остаются')
 ap.add_argument('--overlay-only', action='store_true', help='не рендерить: заново наложить подписи на готовые кадры <out>/raw')
 A = ap.parse_args(argv)
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -931,6 +932,7 @@ def proj(p):
 
 def collect_labels(f):
     out = []
+    if A.no_pointers: return out
     for text, spec, anc, tp in LABELS:
         al = label_alpha(spec, f)
         if al <= 0: continue
