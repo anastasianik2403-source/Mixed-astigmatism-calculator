@@ -1205,4 +1205,4 @@ if A.video and A.only_frame is None and shutil.which('ffmpeg'):
     gw = min(A.width, 640)
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', OUT + '.mp4', '-vf',
                     f'fps=12,scale={gw}:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a', OUT + '.gif'], check=True)
-    print('видео:', OUT + '.mp4', OUT + '_bez_podpisej.mp4', OUT + '.gif')
+    print('видео:', OUT + '.mp4', OUT + '.gif')
