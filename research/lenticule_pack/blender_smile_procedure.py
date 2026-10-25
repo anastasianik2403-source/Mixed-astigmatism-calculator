@@ -49,6 +49,7 @@ ap.add_argument('--out', default='out/smile'); ap.add_argument('--only-frame', t
 ap.add_argument('--frames', default=None, help='диапазон 1-200 или список 10,250,600'); ap.add_argument('--step', type=int, default=1)
 ap.add_argument('--font', default=None); ap.add_argument('--video', action='store_true')
 ap.add_argument('--save-blend', default=None)
+ap.add_argument('--overlay-only', action='store_true', help='не рендерить: заново наложить подписи на готовые кадры <out>/raw')
 A = ap.parse_args(argv)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -864,7 +865,7 @@ z_ch = -17.0; r_ch = math.sqrt(((CHOR[0] + CHOR[1]) / 2) ** 2 - (z_ch - ZS) ** 2
 z_rt = -19.5; r_rt = math.sqrt(((RET[0] + RET[1]) / 2) ** 2 - (z_rt - ZS) ** 2)
 z_sc = -11.0; r_sc = math.sqrt((RS - TS / 2) ** 2 - (z_sc - ZS) ** 2)
 psi_l = math.asin(1.6 / R_ANT); T16 = float(T_cornea(psi_l))
-ANAT_SEG = ('intro', 'zoom', 0.45)
+ANAT_SEG = ('intro', 'zoom', 0.15)
 LABELS = [
     # текст, (сегмент начала, сегмент конца, доля конца), якорь (3D или функция кадра), подпись: 3D-точка или смещение в пикселях
     ('Роговица', ANAT_SEG, sp(cm[0], cm[1]), sp(5.6, 6.6)),
@@ -1018,7 +1019,10 @@ for f in frames:
     bpy.context.view_layer.update()
     labels = collect_labels(f); t1 = time.time()
     raw = os.path.join(OUT, 'raw', f'f{f:04d}.png'); r.filepath = raw
-    bpy.ops.render.render(write_still=True)
+    if not A.overlay_only:
+        bpy.ops.render.render(write_still=True)
+    elif not os.path.exists(raw):
+        continue
     clean, lab = compose(raw, f, labels)
     clean.save(os.path.join(OUT, 'clean', f'f{f:04d}.png')); lab.save(os.path.join(OUT, 'lab', f'f{f:04d}.png'))
     print(f'кадр {f}/{NF} [{seg_of(f)[0]}] {time.time() - t0:.1f} с (сцена {t1 - t0:.1f} с)', flush=True)
