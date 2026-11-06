@@ -31,7 +31,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import minimize
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lenticule_model import write_stl, write_obj, write_ply, thickness_colors, mesh_volume, is_watertight
+from lenticule_model import Lenticule, write_stl, write_obj, write_ply, thickness_colors, mesh_volume, is_watertight
 
 N_CORNEA = 1.376
 K_MUNN = 1.0 / (2.0 * (N_CORNEA - 1.0))          # мкм на (дптр·мм²)
@@ -148,6 +148,9 @@ def main():
     ap.add_argument('--r-zern', type=float, default=3.5, help='радиус разложения по Цернике, мм')
     ap.add_argument('--zern-order', type=int, default=8); ap.add_argument('--out', default='out/pentacam_lenticule')
     ap.add_argument('--exag', type=float, default=10.0, help='увеличение толщины на 3D-виде и в профилях-сечениях')
+    ap.add_argument('--plan', default=None, help='план из протокола VisuMax в очковой плоскости, минус-цилиндр: "Sph,Cyl,Ось,ОЗ,tmin", напр. "+1.75,-5.00,10,6.7,20"')
+    ap.add_argument('--vertex', type=float, default=12.0, help='вертексное расстояние для пересчёта плана в плоскость роговицы, мм')
+    ap.add_argument('--days-after', default=None, help='срок послеоперационного обследования (для отчёта), напр. "1 сутки"')
     A = ap.parse_args()
     os.makedirs(A.out, exist_ok=True); code = A.eye_code
     pre, post = read_ele(A.pre), read_ele(A.post)
@@ -187,6 +190,20 @@ def main():
         a = math.radians(ang); return interp(xs, ys, Z)(np.stack([rs * math.sin(a), rs * math.cos(a)], -1))
     m_thick, m_thin = ax_thick, (ax_thick + 90) % 180
     P = {m_thick: prof(m_thick, dT), m_thin: prof(m_thin, dT)}
+    PL, plan_rows, Lp = {}, [], None
+    if A.plan:                                                # плановая лентикула (Мунерлин) в плоскости роговицы
+        ps, pc, pa, poz, ptm = [float(v) for v in A.plan.split(',')]
+        vd = A.vertex / 1000.0; cp = lambda P_: P_ / (1 - vd * P_)
+        m1, m2 = cp(ps), cp(ps + pc)
+        Lp = Lenticule(m1, m2 - m1, pa, poz, ptm)
+        for ang in (m_thick, m_thin):
+            a = math.radians(ang); PL[ang] = np.nan_to_num(Lp.thickness(rs * math.cos(a), rs * math.sin(a)), nan=0.0)
+        for ang, lab in ((pa, 'плоский (ось плана)'), (pa + 90, 'крутой')):
+            a = math.radians(ang)
+            for rr_ in (0.0, 1.5, 2.5, Lp.R - 0.05):
+                x_, y_ = rr_ * math.cos(a), rr_ * math.sin(a)
+                plan_v = float(Lp.thickness(x_, y_)); meas = float(I(np.array([[y_, x_]]))[0])
+                plan_rows.append((ang % 180, lab, rr_, plan_v, meas))
 
     # Цернике в зоне r ≤ Rz
     Rz = min(A.r_zern, r_ok); msk = (R <= Rz) & np.isfinite(dT)
@@ -284,6 +301,8 @@ def main():
     ax = axs[0]
     ax.plot(rs, P[m_thick], color=GREEN, lw=2.2, label=f'меридиан {m_thick:.0f}° (плоский до операции: {ax_flat_k:.1f}°)')
     ax.plot(rs, P[m_thin], color=RED, lw=2.2, label=f'меридиан {m_thin:.0f}° (крутой до операции)')
+    for ang, colr in ((m_thick, GREEN), (m_thin, RED)):
+        if ang in PL: ax.plot(rs, PL[ang], color=colr, lw=1.6, ls='--', label=f'план VisuMax (Мунерлин), {ang:.0f}°')
     ax.axhline(dT[70, 70], color='gray', lw=0.8, ls=':'); ax.set_xlabel('расстояние от центра, мм'); ax.set_ylabel('толщина лентикулы (оценка), мкм')
     ax.set_title('Профили толщины по меридианам'); ax.grid(alpha=0.3); ax.legend(fontsize=8.5); ax.set_ylim(0, None)
     ax = axs[1]                                               # сечения в реальной геометрии: колпачок над лентикулой, кривизна сохранена
@@ -321,6 +340,13 @@ def main():
               f"(ΔK {kinfo['dK_h']:+.2f} дптр), Rv {kinfo['pre_Rv']:.2f} → {kinfo['post_Rv']:.2f} мм (ΔK {kinfo['dK_v']:+.2f} дптр); "
               f"астигматизм {kinfo['pre_astig']} дптр × {kinfo['pre_axis']}° → {kinfo['post_astig']} дптр × {kinfo['post_axis']}°; "
               f"пахиметрия в вершине {kinfo['pachy_apex_pre']:.0f} → {kinfo['pachy_apex_post']:.0f} мкм.\n")
+    plan_md = ''
+    if Lp is not None:
+        trs = '\n'.join(f'| {a_:.0f}° ({l_}) | {r_:.2f} | {pv:.0f} | {mv:.0f} | {mv / pv:.2f} |' for a_, l_, r_, pv, mv in plan_rows if pv > 0)
+        plan_md = (f"\n**План (протокол VisuMax → плоскость роговицы, вертекс {A.vertex:.0f} мм):** Sph {Lp.sph:+.2f} / Cyl {Lp.cyl:+.2f} × {Lp.axis:.0f}°, "
+                   f"ОЗ {Lp.oz} мм, tmin {Lp.tmin:.0f} мкм → по Мунерлину центр {Lp.t0:.0f}, край плоского меридиана {Lp.t_flat:.0f}, "
+                   f"край крутого {Lp.t_steep:.0f} мкм, объём {Lp.volume_formula():.2f} мм³ (измерено {vol:.2f} мм³ в Ø {2*Rz:.1f} мм).\n\n"
+                   f"| меридиан | r, мм | план, мкм | измерено ΔT, мкм | измерено / план |\n|---|---|---|---|---|\n{trs}\n")
     md = f"""# Лентикула по данным Pentacam: {code}
 
 Метод: два обследования Pentacam (до и после SMILE) совмещены по задней поверхности роговицы; толщина считается по нормали
@@ -329,7 +355,7 @@ def main():
 **Совмещение:** сдвиг {p[0]*1000:.0f} / {p[1]*1000:.0f} мкм (x / y), поворот {math.degrees(p[3]):+.2f}°; расхождение задних
 поверхностей {rms0:.1f} → {rms1:.1f} мкм (RMS, r ≤ 4 мм). Надёжные данные — до r = {r_ok:.2f} мм (Ø {2*r_ok:.1f} мм).
 {kt}
-**ΔT в центре:** {dT[70,70]:.0f} мкм. **Меридиан наибольшей толщины:** {m_thick:.0f}° (плоский меридиан роговицы до операции —
+{('**Срок послеоперационного обследования:** ' + A.days_after + '.' + chr(10)) if A.days_after else ''}**ΔT в центре:** {dT[70,70]:.0f} мкм. **Меридиан наибольшей толщины:** {m_thick:.0f}° (плоский меридиан роговицы до операции —
 {ax_flat_k}°), наименьшей — {m_thin:.0f}°.
 
 | r, мм | среднее, мкм | максимум (меридиан → мкм) | минимум (меридиан → мкм) |
@@ -339,6 +365,7 @@ def main():
 **Эквивалент Мунерлина в центре (r ≤ 2 мм):** вдоль {m_thick:.0f}° {P_thick:+.2f} дптр, вдоль {m_thin:.0f}° {P_thin:+.2f} дптр
 (k = {K_MUNN:.3f} мкм/(дптр·мм²)). Это эффективная «оптическая сила» профиля ΔT, а не план операции.
 
+{plan_md}
 **Цернике:** R = {Rz:.2f} мм, порядок {A.zern_order}, остаточная RMS {zres:.1f} мкм — коэффициенты в `cernike_{code}.csv`.
 
 **3D-модель:** `lentikula_{code}.stl / .obj / .ply` — передняя поверхность = передняя поверхность роговицы «до», опущенная
