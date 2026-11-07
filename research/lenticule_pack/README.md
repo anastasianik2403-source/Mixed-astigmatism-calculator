@@ -214,6 +214,8 @@ python3 pentacam_lenticule.py --pre PRE_ELE.CSV --post POST_ELE.CSV --pre-acd PR
 с ошибками (JSON), отчёт с формулами, карты остатков, профили, 3D-модель STL/OBJ/PLY.
 `python3 lenticule_math_model.py --dT <out>/ubyl_tolshchiny_<код>_mkm.csv --eye-code <код> --plan "Sph,Cyl,Ось,ОЗ,tmin" --cap 120 --rcornea 8.18 --out <папка>`
 
+Сравнение глаз и сроков — `lenticule_compare.py --list spisok.csv` (столбцы kod;json;dT_csv;dney): таблица параметров, графики α и σ по срокам, профили «план — измерено».
+
 **ΔT — оценка, а не точная копия лентикулы:** в неё входит перестройка эпителия и реакция стромы; вывод — гипотеза до
 сравнения с протоколом VisuMax и эпителиальными картами ОКТ.
 
