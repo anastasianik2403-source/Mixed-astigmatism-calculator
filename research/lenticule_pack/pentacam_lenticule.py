@@ -281,20 +281,20 @@ def main():
     # ---------------- рисунки
     import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10})
-    GREEN, RED = '#2e9e5b', '#d64545'
+    from lenticule_style import LENT_CMAP, CORNEA_CMAP, FLAT_COL as GREEN, STEEP_COL as RED, PLAN_COL, HALO
     def mer_lines(ax, r):
         for ang, col in ((m_thick, GREEN), (m_thin, RED)):
-            a = math.radians(ang); ax.plot([-r * math.cos(a), r * math.cos(a)], [-r * math.sin(a), r * math.sin(a)], color=col, lw=1.6)
+            a = math.radians(ang); ax.plot([-r * math.cos(a), r * math.cos(a)], [-r * math.sin(a), r * math.sin(a)], color=col, lw=2.4, path_effects=HALO)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4.8)); ext = [xs[0], xs[-1], ys[-1], ys[0]]
-    for ax, Z, ttl, cm, vr in ((axs[0], T0 * 1000, 'Толщина роговицы ДО, мкм', 'viridis', None),
-                               (axs[1], T1 * 1000, 'Толщина роговицы ПОСЛЕ (совмещено), мкм', 'viridis', None),
-                               (axs[2], dT, 'Убыль толщины = лентикула (оценка), мкм', 'magma_r', (0, np.nanpercentile(dT[R <= r_ok], 99)))):
+    for ax, Z, ttl, cm, vr in ((axs[0], T0 * 1000, 'Толщина роговицы ДО, мкм', CORNEA_CMAP, None),
+                               (axs[1], T1 * 1000, 'Толщина роговицы ПОСЛЕ (совмещено), мкм', CORNEA_CMAP, None),
+                               (axs[2], dT, 'Убыль толщины = лентикула (оценка), мкм', LENT_CMAP, (0, np.nanpercentile(dT[R <= r_ok], 99)))):
         Zm = np.where(R <= r_ok, Z, np.nan)
         im = ax.imshow(Zm, extent=ext, origin='upper', cmap=cm, vmin=None if vr is None else vr[0], vmax=None if vr is None else vr[1])
-        cs = ax.contour(X, Y, Zm, levels=10, colors='k', linewidths=0.4); ax.clabel(cs, fontsize=7, fmt='%.0f')
+        cs = ax.contour(X, Y, Zm, levels=10, colors='#55606e', linewidths=0.5); ax.clabel(cs, fontsize=7, fmt='%.0f')
         mer_lines(ax, r_ok); ax.set_title(ttl); ax.set_xlabel('x, мм'); ax.set_ylabel('y, мм'); ax.set_aspect('equal')
         ax.set_xlim(-r_ok - 0.2, r_ok + 0.2); ax.set_ylim(-r_ok - 0.2, r_ok + 0.2); plt.colorbar(im, ax=ax, shrink=0.85)
-    fig.suptitle(f'{code}: зелёная линия — меридиан наибольшей толщины лентикулы ({m_thick:.0f}°), красная — наименьшей ({m_thin:.0f}°)', fontsize=10)
+    fig.suptitle(f'{code}: бирюзовая линия — меридиан наибольшей толщины лентикулы ({m_thick:.0f}°), терракотовая — наименьшей ({m_thin:.0f}°)', fontsize=10)
     fig.tight_layout(); fig.savefig(os.path.join(A.out, f'karty_{code}.png'), dpi=160); plt.close(fig)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 4.8))
@@ -302,7 +302,7 @@ def main():
     ax.plot(rs, P[m_thick], color=GREEN, lw=2.2, label=f'меридиан {m_thick:.0f}° (плоский до операции: {ax_flat_k:.1f}°)')
     ax.plot(rs, P[m_thin], color=RED, lw=2.2, label=f'меридиан {m_thin:.0f}° (крутой до операции)')
     for ang, colr in ((m_thick, GREEN), (m_thin, RED)):
-        if ang in PL: ax.plot(rs, PL[ang], color=colr, lw=1.6, ls='--', label=f'план VisuMax (Мунерлин), {ang:.0f}°')
+        if ang in PL: ax.plot(rs, PL[ang], color=colr, lw=1.5, ls='--', alpha=0.75, label=f'план VisuMax (Мунерлин), {ang:.0f}°')
     ax.axhline(dT[70, 70], color='gray', lw=0.8, ls=':'); ax.set_xlabel('расстояние от центра, мм'); ax.set_ylabel('толщина лентикулы (оценка), мкм')
     ax.set_title('Профили толщины по меридианам'); ax.grid(alpha=0.3); ax.legend(fontsize=8.5); ax.set_ylim(0, None)
     ax = axs[1]                                               # сечения в реальной геометрии: колпачок над лентикулой, кривизна сохранена
@@ -311,7 +311,7 @@ def main():
         zf = IF0(q); t = np.nan_to_num(interp(xs, ys, dT)(q), nan=0.0).clip(min=0)
         top_ = -(zf + A.cap / 1000.0) + off; bot_ = top_ - t * A.exag / 1000.0
         ax.plot(rs, -zf + off, color='#7a8794', lw=1.0); ax.fill_between(rs, -zf + off, top_, color='#d9e2ec', lw=0)
-        ax.fill_between(rs, top_, bot_, color=col, alpha=0.85, lw=0)
+        ax.fill_between(rs, top_, bot_, color=col, alpha=0.55, lw=0); ax.plot(rs, bot_, color=col, lw=1.2)
         ax.text(0, off + 0.1, f'меридиан {ang:.0f}°', color=col, fontsize=9, fontweight='bold', ha='center')
     ax.set_title(f'Сечения: колпачок {A.cap:.0f} мкм (серый) и лентикула (толщина ×{A.exag:.0f})', fontsize=10)
     ax.set_xlabel('мм'); ax.set_yticks([]); ax.set_aspect(1.2); ax.set_ylim(-2.35, 0.45)
@@ -321,14 +321,16 @@ def main():
     fig = plt.figure(figsize=(9, 6.5)); ax = fig.add_subplot(111, projection='3d')
     pr, pt_ = np.meshgrid(np.linspace(0, Rz, 60), np.linspace(0, 2 * np.pi, 181))   # полярная сетка — ровный край
     GX, GY = pr * np.cos(pt_), pr * np.sin(pt_); Tz = np.clip(zernike_eval(terms, zc, Rz, GX, GY), 0, None)
-    col = plt.cm.magma_r((Tz - Tz.min()) / (Tz.max() - Tz.min() + 1e-9))
-    ax.plot_surface(GX, GY, Tz, facecolors=col, rstride=1, cstride=1, linewidth=0, antialiased=True, shade=True)
+    nz = (Tz - Tz.min()) / (Tz.max() - Tz.min() + 1e-9); col = LENT_CMAP(0.15 + 0.85 * nz); col[..., 3] = 0.72   # полупрозрачно
+    ax.plot_surface(GX, GY, Tz, facecolors=col, rstride=1, cstride=1, linewidth=0, antialiased=True, shade=False)
+    ax.contour(GX, GY, Tz, levels=np.arange(10, Tz.max(), 10), colors='#3c4a5a', linewidths=0.6, offset=None)
+    ax.contour(GX, GY, Tz, levels=np.arange(10, Tz.max(), 10), cmap=LENT_CMAP, linewidths=0.8, offset=0, alpha=0.7)   # тень-проекция
     for ang, c3 in ((m_thick, GREEN), (m_thin, RED)):
         a = math.radians(ang); r3 = np.linspace(-Rz, Rz, 141); x3, y3 = r3 * math.cos(a), r3 * math.sin(a)
-        ax.plot(x3, y3, np.clip(zernike_eval(terms, zc, Rz, x3, y3), 0, None) + 0.6, color=c3, lw=2.6)
+        ax.plot(x3, y3, np.clip(zernike_eval(terms, zc, Rz, x3, y3), 0, None) + 0.4, color=c3, lw=3.2, path_effects=HALO, zorder=10)
     ax.set_xlabel('x, мм'); ax.set_ylabel('y, мм'); ax.set_zlabel('толщина, мкм'); ax.view_init(28, -58)
     ax.set_box_aspect((1, 1, 0.45))
-    ax.set_title(f'{code}: рельеф толщины лентикулы (зелёный — меридиан {m_thick:.0f}°, красный — {m_thin:.0f}°)', fontsize=9)
+    ax.set_title(f'{code}: рельеф толщины лентикулы (бирюзовый — меридиан {m_thick:.0f}°, терракотовый — {m_thin:.0f}°)', fontsize=9)
     fig.tight_layout(); fig.savefig(os.path.join(A.out, f'3d_{code}.png'), dpi=160); plt.close(fig)
 
     # ---------------- отчёт

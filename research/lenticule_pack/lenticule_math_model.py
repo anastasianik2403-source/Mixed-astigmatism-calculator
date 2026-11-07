@@ -132,15 +132,16 @@ def main():
 
     # ---------- рисунки
     import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
-    plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10}); GREEN, RED = '#2e9e5b', '#d64545'
+    plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10})
+    from lenticule_style import LENT_CMAP, FLAT_COL as GREEN, STEEP_COL as RED, PLAN_COL, MODEL_B_COL, HALO
     TA = np.where(R <= A.rmax, model_A(pA, R, TH), np.nan); Zm = np.where(R <= A.rmax, Z, np.nan)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4.7)); ext = [xs[0], xs[-1], ys[-1], ys[0]]; vmax = np.nanpercentile(Zm, 99.5)
-    for ax, M_, ttl, cm, vr in ((axs[0], Zm, 'Измерено (Pentacam), мкм', 'magma_r', (0, vmax)), (axs[1], TA, 'Модель A (9 параметров), мкм', 'magma_r', (0, vmax)),
+    for ax, M_, ttl, cm, vr in ((axs[0], Zm, 'Измерено (Pentacam), мкм', LENT_CMAP, (0, vmax)), (axs[1], TA, 'Модель A (9 параметров), мкм', LENT_CMAP, (0, vmax)),
                                (axs[2], TA - Zm, f'Остаток A − измерено, мкм (RMS {rmsA:.1f})', 'RdBu_r', (-8, 8))):
         im = ax.imshow(M_, extent=ext, cmap=cm, vmin=vr[0], vmax=vr[1]); plt.colorbar(im, ax=ax, shrink=0.85)
         ax.set_xlim(-A.rmax, A.rmax); ax.set_ylim(-A.rmax, A.rmax); ax.set_title(ttl); ax.set_xlabel('x, мм'); ax.set_ylabel('y, мм')
         for ang, col in ((th0, GREEN), (th0 + math.pi / 2, RED)):
-            ax.plot([-A.rmax * math.cos(ang), A.rmax * math.cos(ang)], [-A.rmax * math.sin(ang), A.rmax * math.sin(ang)], color=col, lw=1.4)
+            ax.plot([-A.rmax * math.cos(ang), A.rmax * math.cos(ang)], [-A.rmax * math.sin(ang), A.rmax * math.sin(ang)], color=col, lw=2.2, path_effects=HALO)
     fig.tight_layout(); fig.savefig(os.path.join(A.out, f'karty_model_{code}.png'), dpi=160); plt.close(fig)
 
     from scipy.interpolate import RegularGridInterpolator
@@ -151,11 +152,11 @@ def main():
     fig, axs = plt.subplots(1, 2, figsize=(14, 4.8), sharey=True)
     for ax, ang, col, nm in ((axs[0], th0, GREEN, 'наибольшей толщины'), (axs[1], th0 + math.pi / 2, RED, 'наименьшей толщины')):
         q = np.stack([rs * math.sin(ang), rs * math.cos(ang)], -1)
-        ax.plot(rs, IZ(q), color='k', lw=2.4, label='измерено (Pentacam, 1-е сутки)')
+        ax.plot(rs, IZ(q), color='#2b3440', lw=2.4, label='измерено (Pentacam)')
         ax.plot(rs, model_A(pA, np.abs(rs), np.where(rs >= 0, ang, ang + math.pi)), color=col, lw=2, label='модель A')
         if PB:
-            ax.plot(rs, IP(q), color='gray', lw=1.4, ls='--', label='план VisuMax (Мунерлин)')
-            ax.plot(rs, IB(q), color='#3b6fb6', lw=1.6, ls='-.', label=f'модель B: {PB["alpha"]:.2f}·план, размытие σ={PB["sigma_mm"]:.2f} мм')
+            ax.plot(rs, IP(q), color=PLAN_COL, lw=1.4, ls='--', label='план VisuMax (Мунерлин)')
+            ax.plot(rs, IB(q), color=MODEL_B_COL, lw=1.6, ls='-.', label=f'модель B: {PB["alpha"]:.2f}·план, размытие σ={PB["sigma_mm"]:.2f} мм')
         ax.set_title(f'Меридиан {math.degrees(ang) % 180:.0f}° ({nm})'); ax.set_xlabel('расстояние от центра, мм'); ax.grid(alpha=0.3)
     axs[0].set_ylabel('толщина лентикулы, мкм'); axs[0].legend(fontsize=8.5); axs[0].set_ylim(0, None)
     fig.tight_layout(); fig.savefig(os.path.join(A.out, f'profili_model_{code}.png'), dpi=160); plt.close(fig)
