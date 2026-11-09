@@ -440,8 +440,8 @@ def mat_iris():
     nt.links.new(f2.outputs['Fac'], pert.inputs[0])
     rp = nt.nodes.new('ShaderNodeMath'); rp.operation = 'ADD'; nt.links.new(rn.outputs['Result'], rp.inputs[0]); nt.links.new(pert.outputs['Value'], rp.inputs[1])
     ramp = nt.nodes.new('ShaderNodeValToRGB'); cr = ramp.color_ramp
-    stops = [(0.00, (52, 32, 20)), (0.05, (140, 78, 32)), (0.15, (214, 132, 58)), (0.32, (204, 142, 78)), (0.41, (160, 190, 186)),
-             (0.68, (150, 192, 205)), (0.87, (118, 158, 172)), (0.95, (62, 84, 96)), (1.00, (38, 46, 54))]
+    stops = [(0.00, (40, 24, 14)), (0.05, (92, 54, 26)), (0.15, (150, 92, 44)), (0.32, (128, 80, 40)), (0.45, (108, 70, 38)),
+             (0.68, (96, 64, 36)), (0.87, (78, 52, 30)), (0.95, (46, 30, 18)), (1.00, (30, 20, 12))]   # натуральная карая
     while len(cr.elements) < len(stops): cr.elements.new(0.5)
     for e, (pos, c) in zip(cr.elements, stops): e.position = pos; e.color = (*lin(c), 1)
     nt.links.new(rp.outputs['Value'], ramp.inputs['Fac'])
@@ -499,7 +499,10 @@ M['epi_cut'] = mat_basic('EpiCut2', lin((226, 206, 200)), 0.92, rough=0.5)
 M['str_cut'] = mat_basic('StromaCut2', lin((214, 222, 232)), 0.9, rough=0.55, sss=0.1)
 M['bow_cut'] = mat_basic('BowCut2', lin((246, 242, 232)), 0.95, rough=0.5)
 M['end_cut'] = mat_basic('EndCut2', lin((150, 160, 190)), 0.95, rough=0.5)
-M['lent'] = mat_basic('LenticuleGrey', lin((214, 220, 228)), 0.45, rough=0.12, coat=0.8, emit=0.04, spec=0.6)
+CMAP[:] = [(198, 224, 242), (168, 206, 236), (136, 186, 226), (104, 162, 214), (78, 138, 198), (58, 116, 180), (44, 96, 160)]
+M['lent'] = mat_lenticule()   # голубая шкала по толщине: тонко — светлее, толсто — глубже
+M['cut_green'] = mat_basic('CutGreen', lin((92, 168, 124)), 0.78, rough=0.45, emit=0.1)
+M['cut_red'] = mat_basic('CutRed', lin((188, 98, 92)), 0.78, rough=0.45, emit=0.1)
 M['lent_cut'] = mat_basic('LenticuleGreyCut', lin((96, 108, 126)), 1.0, rough=0.45, emit=0.0)
 M['flat'] = mat_basic('MeridianGreen', lin((40, 200, 110)), 1.0, rough=0.35, emit=2.2)
 M['steep'] = mat_basic('MeridianRed', lin((236, 64, 60)), 1.0, rough=0.35, emit=2.2)
@@ -531,7 +534,7 @@ def edge_nose(th, rt=R_LT, n=NOSE_N):
     zt = -R_ANT + math.sqrt(rt ** 2 - R_ ** 2); k = (rt - t) / rt
     top = np.array([R_, zt]); bot = np.array([R_ * k, -R_ANT + (zt + R_ANT) * k]); mid = 0.5 * (top + bot)
     nrm = (top - np.array([0.0, -R_ANT])); nrm /= np.linalg.norm(nrm); tan = np.array([nrm[1], -nrm[0]])   # наружу по поверхности
-    e = 0.55 * t + 0.03
+    e = 0.006
     ph = np.linspace(np.pi / 2, -np.pi / 2, n)
     return mid + np.outer(e * np.cos(ph), tan) + np.outer(0.5 * t * np.sin(ph), nrm)
 
@@ -607,7 +610,7 @@ def build_ribs(n=36):
 
 
 set_mesh(ribs_obj, *build_ribs(), sharp=30)
-lent_obj = new_obj('Lenticule', [M['lent'], M['lent_cut']])
+lent_obj = new_obj('Lenticule', [M['lent'], M['lent_cut'], M['cut_red'], M['cut_green']])
 obl = {k: new_obj('OBL_' + k, [M['obl']]) for k in ('post', 'side', 'cap', 'inc')}
 
 # зрительный нерв: полуцилиндр в плоскости разреза, на 15° в сторону носа
@@ -705,7 +708,7 @@ def dock_of(f):  # в версии 4 стыковка не показывает�
 
 
 # ---------------------------------------------------------------- путь извлечения
-RB, GMAX = 0.6, math.radians(60)
+RB, GMAX = 2.2, math.radians(34)
 
 
 def path(s):
@@ -727,10 +730,11 @@ def lent_deform(V, pull, comp=1.0):
     s = R_LT * alpha + pull; v = R_LT * beta; h = rad - R_LT
     # сечение — дуга окружности: кривизна плавно меняется от кривизны роговицы (−1/R) до свёрнутой «трубочки» (+1/ρ0)
     c = comp * ss((s - (S_INC - 1.8)) / 1.7)
-    kap = -(1 - c) / R_LT + c / ROLL_R
+    kap = -(1 - c) / R_LT                     # выпрямляется, но не сворачивается
     small = np.abs(kap) < 1e-6; ks = np.where(small, 1.0, kap)
     sx = np.where(small, v, np.sin(ks * v) / ks); sy = np.where(small, 0.5 * kap * v * v, (1 - np.cos(ks * v)) / ks)
     X = sx - h * np.sin(kap * v); Y = sy + h * np.cos(kap * v)
+    Y = Y + c * 0.10 * np.sin(2 * np.pi * (s - pull) / 3.2 + 0.6) * np.cos(np.pi * v / (2.6 * L.R))   # пологая волна по длине
     P, T, B = path(s * (1 + 0.03 * c))          # лёгкое упругое растяжение вдоль тяги
     return P + N_INC[None] * X[:, None] + B * Y[:, None]
 
@@ -838,7 +842,7 @@ def spat_mesh(pts, nrm, Lblade, nseg=18):
 
 
 # ---------------------------------------------------------------- лазер: пузырьки по одному
-BUB_PITCH, BUB_STEP, BUB_R = 0.17, 0.065, 0.021   # шаг спирали, шаг импульсов, радиус пузырька, мм (схема: реально — микрометры)
+BUB_PITCH, BUB_STEP, BUB_R = 0.075, 0.032, 0.012   # шаг спирали, шаг импульсов, радиус пузырька, мм (схема: реально — микрометры)
 TH_AX = math.radians(A.axis)                       # спирали начинаются на плоском меридиане (плоскость среза)
 
 
@@ -952,6 +956,7 @@ def build_static(W):
             m_ = np.abs(((ang_ - edge + np.pi) % (2 * np.pi)) - np.pi) < 1e-6
             V[m_, 0] += sgn * 0.004 * -np.sin(edge); V[m_, 1] += sgn * 0.004 * np.cos(edge)
     Vl = V; thk = lent_thk(Vl)
+    if len(P[2]) == 2: Mt = Mt.copy(); Mt[-2:] = [2, 3]   # срез у начала сектора — крутой меридиан (красный), у конца — плоский (зелёный)
     _cache['lent'] = (Vl, P, Mt, thk, np.sin(tt - TH_AX) ** 2)
     _cache['W'] = W
 
@@ -1021,7 +1026,7 @@ def update_bubbles(f, W):
         if n == 0: continue
         b = BUB[k_]; P = b['P'][:n]; th = b['th'][:n]
         keep = (((th - th0) % (2 * np.pi)) <= (th1 - th0) + 1e-9) if W > 0.01 else np.ones(n, bool)
-        rad = BUB_R * (0.45 + 0.55 * np.clip(age / 2.0, 0, 1)) * fade
+        rad = np.full(n, BUB_R * fade)          # все пузырьки одного размера
         if k_ in ('post', 'cap'):
             clr = spat_cleared('post' if k_ == 'post' else 'ant', f, P[:, 0], P[:, 1]); rad = rad * (1 - clr)
         elif k_ == 'side':
@@ -1107,8 +1112,8 @@ def frame_state(f):
         if on: ob.location = tuple(spot)
     update_bubbles(f, W)
     # лентикула: появляется только после того, как пройдены дно и верх (этап reveal)
-    a_l = 0.7 * ss((f - START['side']) / max(1, START['inc'] - START['side']))   # светло-серая полупрозрачная, проявляется по мере резов
-    if f >= START['pull']: a_l = 0.7 + 0.15 * ss(prog('pull', f))
+    a_l = 0.82 * ss((f - START['side']) / max(1, START['inc'] - START['side']))   # голубая, проявляется по мере резов
+    if f >= START['pull']: a_l = 0.82 + 0.13 * ss(prog('pull', f))
     lent_obj.hide_render = bool(a_l <= 0.001)
     LENT_BSDF.inputs['Alpha'].default_value = float(a_l)
     if f >= START['pull']:
@@ -1176,8 +1181,8 @@ CAM = [  # (этап, доля этапа), азимут, высота, расс
     (('forc_in', 0), dict(az=215, el=46, d=14.5, t=(-1.0, 1.7, -0.3), up=1)), (('pull', 0), dict(az=215, el=44, d=14.5, t=(-1.0, 1.7, -0.3), up=1)),
     # пинцет выносит лентикулу на передний план; показ горизонтально с вращением по часовой стрелке
     (('bring', 0), dict(az=220, el=36, d=18, t=(-2.2, 3.6, 1.6), up=1)),
-    (('show', 0), dict(az=AXD + 225, el=16, d=11.5, t=(0, 0, DL), up=1)),
-    (None, dict(az=AXD + 222, el=12, d=10.0, t=(0, 0, DL), up=1))]
+    (('show', 0), dict(az=AXD + 225, el=10, d=11.0, t=(0, 0, DL), up=1)),
+    (None, dict(az=AXD + 222, el=6, d=9.6, t=(0, 0, DL), up=1))]
 
 
 def cam_pose(f):
