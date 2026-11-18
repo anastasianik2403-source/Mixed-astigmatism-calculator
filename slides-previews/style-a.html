@@ -1,0 +1,56 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>A</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#14213d;--blue:#1a73e8;--sky:#8ec5ff;--amber:#ff9f1c;--ink:#2b3a55}
+*{box-sizing:border-box;margin:0}
+body{background:#888;font-family:Montserrat,sans-serif}
+.slide{position:relative;width:1920px;height:1080px;overflow:hidden;background:linear-gradient(180deg,#e6f1ff 0%,#f6faff 60%,#eef5ff 100%);color:var(--navy)}
+.chrome{position:absolute;top:56px;left:96px;right:96px;display:flex;justify-content:space-between;align-items:center;font-size:22px;color:var(--ink)}
+.chrome b{font-size:38px;font-weight:800;letter-spacing:.5px;color:#26397a}.chrome b i{font-style:normal;color:var(--blue)}
+svg.wave{position:absolute;left:0;right:0;bottom:0;width:100%}
+.ghost{position:absolute;left:90px;top:130px;font-size:200px;font-weight:800;line-height:.95;color:rgba(26,115,232,.07);letter-spacing:4px}
+h1{position:absolute;left:96px;top:190px;width:1500px;font-size:62px;line-height:1.14;font-weight:800;letter-spacing:-1px}
+.pill{position:absolute;left:96px;top:620px;display:flex;border-radius:60px;overflow:hidden;font-size:28px;font-weight:600;box-shadow:0 12px 40px rgba(26,115,232,.25)}
+.pill span:first-child{background:linear-gradient(90deg,#1a73e8,#4e9bff);color:#fff;padding:20px 40px}
+.pill span:last-child{background:#dcebff;color:#26397a;padding:20px 40px;font-weight:500}
+.sub{position:absolute;left:96px;top:730px;font-size:26px;color:var(--ink);line-height:1.5;font-weight:500}
+h2{position:absolute;left:96px;top:170px;font-size:84px;font-weight:800;letter-spacing:-1px}
+h2 small{display:block;font-size:26px;font-weight:600;letter-spacing:4px;color:var(--blue);margin-bottom:10px}
+.grid{position:absolute;left:96px;right:96px;top:330px;display:grid;grid-template-columns:1fr 1fr;gap:36px}
+.card{position:relative;padding:32px 48px;border-radius:40px;background:rgba(255,255,255,.62);backdrop-filter:blur(18px);border:2px solid rgba(255,255,255,.9);box-shadow:0 24px 60px rgba(40,90,170,.14);height:290px}
+.num{font-size:104px;font-weight:800;line-height:1;background:linear-gradient(135deg,#1a73e8,#8ec5ff);-webkit-background-clip:text;color:transparent;letter-spacing:-4px}
+.card:nth-child(2) .num,.card:nth-child(3) .num{background:linear-gradient(135deg,#ff9f1c,#ffd08a);-webkit-background-clip:text}
+.card h3{font-size:36px;font-weight:700;margin:6px 0 10px}
+.card p{font-size:25px;line-height:1.4;color:var(--ink);font-weight:500}
+.card p b{color:var(--blue)}
+.card:nth-child(2) p b,.card:nth-child(3) p b{color:#e07b00}
+.foot{position:absolute;left:96px;bottom:60px;font-size:20px;color:#fff;font-weight:600;letter-spacing:1px;z-index:3}
+</style></head><body>
+<div class="slide" id="s1">
+ <div class="chrome"><b>КАТАРАКТА <i>2026</i></b><span>2–4 сентября 2026 · Москва</span></div>
+ 
+ <h1>Современный подход к хирургической коррекции смешанного астигматизма с применением фемтосекундной лентикулярной технологии</h1>
+ <div class="pill"><span>Никитина А.Е.</span><span>Костенев С.В. · Макаров Р.А. · Садрутдинов Р.Ш.</span></div>
+ <div class="sub">ФГБОУ ВО «Российский университет медицины» Минздрава России<br>ФГАУ «НМИЦ «МНТК «Микрохирургия глаза» им. акад. С.Н. Федорова»</div>
+ <svg class="wave" viewBox="0 0 1920 420" height="420"><defs>
+  <linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#cfe6ff"/><stop offset=".5" stop-color="#4e9bff"/><stop offset="1" stop-color="#1a5fd0"/></linearGradient>
+  <linearGradient id="o" x1="0" x2="1"><stop offset="0" stop-color="#ffd08a" stop-opacity=".1"/><stop offset=".4" stop-color="#ffb347"/><stop offset="1" stop-color="#ff8a00" stop-opacity=".1"/></linearGradient></defs>
+  <path d="M0 330 C300 230 520 360 820 290 S1350 90 1920 120 L1920 420 L0 420Z" fill="url(#o)" opacity=".85"/>
+  <path d="M0 380 C400 300 700 400 1100 300 S1600 150 1920 200 L1920 420 L0 420Z" fill="url(#b)" opacity=".8"/>
+  <path d="M0 400 C500 350 800 420 1200 350 S1700 270 1920 300 L1920 420 L0 420Z" fill="#fff" opacity=".55"/></svg>
+</div>
+<div class="slide" id="s2">
+ <div class="chrome"><b>КАТАРАКТА <i>2026</i></b><span>2–4 сентября 2026 · Москва</span></div>
+ <h2><small>ЗАКЛЮЧЕНИЕ</small>Выводы</h2>
+ <div class="grid">
+  <div class="card"><div class="num">01</div><h3>Геометрическая модель лентикулы</h3><p>Торическая <b>седловидная форма</b> подтверждает обоснованность протокола транспозиции</p></div>
+  <div class="card"><div class="num">02</div><h3>Рост НКОЗ в обеих группах</h3><p>SMILE: <b>0,34 → 0,88</b><br>ФемтоЛАЗИК: <b>0,32 → 0,75</b></p></div>
+  <div class="card"><div class="num">03</div><h3>Остаточный цилиндр</h3><p>В группе SMILE вдвое меньше: <b>−0,62 D</b> против −1,25 D</p></div>
+  <div class="card"><div class="num">04</div><h3>Технология эффективна и безопасна</h3><p>Перспективна для внедрения; нужны накопление данных и статистика</p></div>
+ </div>
+ <svg class="wave" viewBox="0 0 1920 420" height="110" preserveAspectRatio="none"><defs>
+  <linearGradient id="b2" x1="0" x2="1"><stop offset="0" stop-color="#cfe6ff"/><stop offset=".5" stop-color="#4e9bff"/><stop offset="1" stop-color="#1a5fd0"/></linearGradient>
+  <linearGradient id="o2" x1="0" x2="1"><stop offset="0" stop-color="#ffd08a" stop-opacity=".1"/><stop offset=".4" stop-color="#ffb347"/><stop offset="1" stop-color="#ff8a00" stop-opacity=".1"/></linearGradient></defs>
+  <path d="M0 330 C300 230 520 360 820 290 S1350 90 1920 120 L1920 420 L0 420Z" fill="url(#o2)" opacity=".8"/>
+  <path d="M0 380 C400 300 700 400 1100 300 S1600 150 1920 200 L1920 420 L0 420Z" fill="url(#b2)" opacity=".8"/></svg>
+</div></body></html>
