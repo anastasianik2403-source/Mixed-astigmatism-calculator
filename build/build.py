@@ -54,7 +54,7 @@ def shape(sl, kind, x, y, w, h, fill=None, alpha=None, line=None, lw=0.75, shado
 
 
 def card(sl, x, y, w, h, fill="FFFFFF", alpha=78, line="FFFFFF", adj=0.07, shadow=True):
-    return shape(sl, MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h, fill, alpha, line, 1.5, shadow, adj)
+    return shape(sl, MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h, fill, max(38, alpha - 32), line, 1.75, shadow, adj)
 
 
 def txt(sl, x, y, w, h, paras, size=14, color=NAVY, bold=False, align='l', anchor='t', italic=False,
@@ -102,7 +102,7 @@ def base(over, title):
     txt(sl, 8.2, 0.38, 4.55, 0.3, "2–4 сентября 2026 · Москва", size=11, color=MUTED, align='r')
     txt(sl, 0.6, 0.88, 8, 0.3, over.upper(), size=11, bold=True, color=BLUE)
     txt(sl, 0.6, 1.15, 12.1, 0.6, title, size=28 if len(title) <= 55 else 24, bold=True, color=NAVY)
-    txt(sl, 12.1, 7.08, 0.65, 0.25, f"{PAGE[0]:02d}", size=11, bold=True, color="FFFFFF", align='r')
+    txt(sl, 12.1, 7.08, 0.65, 0.25, f"{PAGE[0]:02d}", size=11, bold=True, color="26397A", align='r')
     return sl
 
 
@@ -161,14 +161,14 @@ def bar_chart(sl, x, y, w, h, cats, series, colors, vmin, vmax, major, fmt='0.00
 sl = prs.slides.add_slide(BLANK); PAGE[0] += 1
 bg(sl, 'title')
 txt(sl, 0.6, 0.45, 7, 0.7, [[("КАТАРАКТА ", {'color': "26397A"}), ("2026", {'color': BLUE})]], size=34, bold=True)
-txt(sl, 0.6, 1.2, 9.5, 0.7, ["26-й Всероссийский научно-практический конгресс с международным участием",
+txt(sl, 0.6, 1.1, 9.5, 0.7, ["26-й Всероссийский научно-практический конгресс с международным участием",
                               [("Современные технологии катарактальной, рефракционной и роговичной хирургии", {'bold': True})]], size=12, color=INK, spacing=1.15)
-txt(sl, 0.6, 1.95, 9, 0.3, [[("2–4 сентября 2026", {'bold': True, 'color': BLUE}), ("  ·  Москва, Конгресс-центр ЦМТ", {})]], size=11, color=MUTED)
-txt(sl, 0.6, 2.4, 11.2, 2.2, "Современный подход к хирургической коррекции смешанного астигматизма с применением фемтосекундной лентикулярной технологии",
+txt(sl, 0.6, 1.75, 9, 0.3, [[("2–4 сентября 2026", {'bold': True, 'color': BLUE}), ("  ·  Москва, Конгресс-центр ЦМТ", {})]], size=11, color=MUTED)
+txt(sl, 0.6, 2.25, 11.2, 1.6, "Современный подход к хирургической коррекции смешанного астигматизма с применением фемтосекундной лентикулярной технологии",
     size=30, bold=True, color=NAVY, spacing=1.08)
-pill(sl, 0.6, 4.85, 3.3, 0.5, "Докладчик: Никитина А.Е.", BLUE, size=13)
-txt(sl, 4.1, 4.85, 7, 0.5, "Соавторы: д.м.н. Костенев С.В., к.м.н. Макаров Р.А., Садрутдинов Р.Ш.", size=13, color=INK, anchor='m')
-txt(sl, 0.6, 5.55, 8.6, 0.7, ["ФГБОУ ВО «Российский университет медицины» Минздрава России",
+pill(sl, 0.6, 3.95, 3.3, 0.5, "Докладчик: Никитина А.Е.", BLUE, size=13)
+txt(sl, 4.1, 3.95, 8, 0.5, "Соавторы: д.м.н. Костенев С.В., к.м.н. Макаров Р.А., Садрутдинов Р.Ш.", size=13, color=INK, anchor='m')
+txt(sl, 0.6, 4.6, 8.6, 0.7, ["ФГБОУ ВО «Российский университет медицины» Минздрава России",
                                "ФГАУ «НМИЦ «МНТК «Микрохирургия глаза» им. акад. С.Н. Федорова» Минздрава России"], size=11, color=INK, spacing=1.2)
 
 # ================= 2. АКТУАЛЬНОСТЬ 1 =================
@@ -215,7 +215,7 @@ txt(sl, 10.65, 6.2, 2.1, 0.5, "ARVO Annual Meeting, 2025", size=10, color=MUTED,
 
 # ================= 4. ЦЕЛЬ =================
 sl = base("Цель и методы", "Цель")
-shape(sl, MSO_SHAPE.ROUNDED_RECTANGLE, 0.9, 2.5, 11.5, 1.8, "FFFFFF", 80, "FFFFFF", 1.5, True, 0.5)
+shape(sl, MSO_SHAPE.ROUNDED_RECTANGLE, 0.9, 2.5, 11.5, 1.8, "FFFFFF", 55, "FFFFFF", 1.5, True, 0.5)
 shape(sl, MSO_SHAPE.ROUNDED_RECTANGLE, 0.9, 2.5, 0.16, 1.8, BLUE, None, None, adj=0.5)
 txt(sl, 1.5, 2.5, 10.4, 1.8, "Разработать лентикулярную технологию для коррекции смешанного астигматизма", size=28, bold=True, color=NAVY, anchor='m', spacing=1.1)
 pic(sl, "p4_74.png", 8.2, 4.35, 4.6, 2.55, halign='r')
@@ -532,9 +532,9 @@ for i, (n, t, body, col) in enumerate(items):
 sl = prs.slides.add_slide(BLANK); PAGE[0] += 1
 bg(sl, 'title')
 txt(sl, 0.6, 0.45, 7, 0.7, [[("КАТАРАКТА ", {'color': "26397A"}), ("2026", {'color': BLUE})]], size=34, bold=True)
-txt(sl, 0.6, 2.4, 7.2, 1.6, "Благодарю за внимание!", size=44, bold=True, color=NAVY, spacing=1.05)
-pill(sl, 0.6, 4.3, 5.8, 0.5, "anastasianik2403@gmail.com", BLUE, size=14)
-pic(sl, "p20_294.png", 7.6, 1.3, 5.2, 4.1)
+txt(sl, 0.6, 2.0, 7.2, 1.6, "Благодарю за внимание!", size=44, bold=True, color=NAVY, spacing=1.05)
+pill(sl, 0.6, 3.9, 5.8, 0.5, "anastasianik2403@gmail.com", BLUE, size=14)
+pic(sl, "p20_294.png", 7.4, 1.1, 5.3, 4.2)
 
 prs.save("../Astigmatism_glass_wave.pptx")
 print("saved")

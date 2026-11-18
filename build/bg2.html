@@ -1,0 +1,68 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<style>.s{position:relative;width:1920px;height:1080px;overflow:hidden;background:linear-gradient(180deg,#dcebff 0%,#eef6ff 45%,#f6faff 100%)}svg{position:absolute;left:0;top:0}</style>
+<div class="s" id="title"></div><div class="s" id="content"></div>
+<script>
+const NS='http://www.w3.org/2000/svg';
+let uid=0;
+function el(p,n,a={}){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+const BL={hi:'#eaf5ff',lt:'#a9d3ff',md:'#4f9bff',dk:'#1c5fd6',dd:'#0f3fa8'};
+const AM={hi:'#fff6e2',lt:'#ffdc9c',md:'#ffb340',dk:'#ff8a00',dd:'#e06a00'};
+function ribbon(svg,o){
+  const {x0,x1,y0,tilt=0,rise=0,amp=50,f=.003,ph=0,amp2=20,f2=.007,ph2=0,th=160,thv=.5,pal=BL,op=.7,fadeL=.15,fadeR=.15,hair=4,hl=1}=o;
+  const N=Math.ceil((x1-x0)/6),top=[],bot=[];
+  for(let i=0;i<=N;i++){const x=x0+i*6,u=(x-x0)/(x1-x0);
+    const yc=y0+tilt*u-rise*Math.pow(u,3.2)+amp*Math.sin(f*x+ph)+amp2*Math.sin(f2*x+ph2);
+    const t=th*(1-thv+thv*(0.5+0.5*Math.sin(f*1.6*x+ph*1.3+1))) * Math.sin(Math.PI*Math.min(1,Math.max(0.02,u)))**.35;
+    top.push([x,yc-t/2]);bot.push([x,yc+t/2]);}
+  const id='g'+(uid++);
+  const defs=el(svg,'defs');
+  const lg=el(defs,'linearGradient',{id:id+'v',x1:0,y1:0,x2:0,y2:1});
+  [[0,pal.hi,.95],[.25,pal.lt,.85],[.55,pal.md,.9],[.85,pal.dk,.85],[1,pal.lt,.35]].forEach(([s,c,a])=>el(lg,'stop',{offset:s,'stop-color':c,'stop-opacity':a}));
+  const mg=el(defs,'linearGradient',{id:id+'m',x1:0,y1:0,x2:1,y2:0});
+  [[0,0],[fadeL,1],[1-fadeR,1],[1,0]].forEach(([s,a])=>el(mg,'stop',{offset:s,'stop-color':'#fff','stop-opacity':a}));
+  const mk=el(defs,'mask',{id:id+'k',maskUnits:'userSpaceOnUse',x:0,y:0,width:1920,height:1080});
+  el(mk,'rect',{x:x0,y:0,width:x1-x0,height:1080,fill:`url(#${id}m)`});
+  const g=el(svg,'g',{mask:`url(#${id}k)`,opacity:op});
+  const poly=top.concat(bot.slice().reverse()).map(p=>p.join(',')).join(' ');
+  el(g,'polygon',{points:poly,fill:`url(#${id}v)`});
+  // glass fibres
+  for(let k=1;k<=hair;k++){const q=k/(hair+1);
+    const d=top.map((p,i)=>(i?'L':'M')+p[0]+','+(p[1]+(bot[i][1]-p[1])*q)).join('');
+    el(g,'path',{d,fill:'none',stroke:k%2?'#ffffff':pal.dd,'stroke-width':k%2?1.2:.8,opacity:k%2?.38:.12});}
+  {const f2=el(defs,'filter',{id:id+'i',x:'-10%',y:'-50%',width:'120%',height:'200%'});el(f2,'feGaussianBlur',{stdDeviation:9});
+   [[.3,.8,.55],[.72,.5,.35]].forEach(([q,w,a])=>{const d=top.map((p,i)=>(i?'L':'M')+p[0]+','+(p[1]+(bot[i][1]-p[1])*q)).join('');
+     el(g,'path',{d,fill:'none',stroke:'#fff','stroke-width':th*.16*w,opacity:a,filter:`url(#${id}i)`});});}
+  if(hl){
+    const dt=top.map((p,i)=>(i?'L':'M')+p.join(',')).join('');
+    const db=bot.map((p,i)=>(i?'L':'M')+p.join(',')).join('');
+    const f1=el(defs,'filter',{id:id+'b'});el(f1,'feGaussianBlur',{stdDeviation:2.2});
+    el(g,'path',{d:dt,fill:'none',stroke:'#fff','stroke-width':5,opacity:.9,filter:`url(#${id}b)`});
+    el(g,'path',{d:dt,fill:'none',stroke:'#fff','stroke-width':1.5,opacity:1});
+    el(g,'path',{d:db,fill:'none',stroke:pal.lt,'stroke-width':3,opacity:.7,filter:`url(#${id}b)`});
+  }
+}
+function glow(svg,cx,cy,r,c='#fff',o=.7){const d=el(svg,'defs'),id='gl'+(uid++);const f=el(d,'filter',{id,x:'-50%',y:'-50%',width:'200%',height:'200%'});el(f,'feGaussianBlur',{stdDeviation:r/3});el(svg,'circle',{cx,cy,r,fill:c,opacity:o,filter:`url(#${id})`});}
+function mk(id){const s=document.getElementById(id);const svg=el(s,'svg',{width:1920,height:1080,viewBox:'0 0 1920 1080'});return svg}
+
+// ---------- TITLE ----------
+{const svg=mk('title');
+ glow(svg,1500,230,260,'#fff',.8);glow(svg,300,120,200,'#cfe6ff',.6);
+ const t=el(svg,'text',{x:70,y:240,'font-family':'Arial','font-weight':800,'font-size':170,fill:'#1a73e8',opacity:.05,'letter-spacing':4});t.textContent='MIXED';
+ const t2=el(svg,'text',{x:70,y:400,'font-family':'Arial','font-weight':800,'font-size':170,fill:'#1a73e8',opacity:.05,'letter-spacing':4});t2.textContent='ASTIGMATISM';
+ // pale base sheet
+ ribbon(svg,{x0:-80,x1:2000,y0:900,tilt:-60,amp:50,f:.0025,ph:.5,th:300,pal:{hi:'#ffffff',lt:'#e3f0ff',md:'#bcdcff',dk:'#8fc0ff',dd:'#5d9bf0'},op:.55,fadeL:.05,fadeR:.05,hair:5});
+ // amber strands (left)
+ [[740,260,.2,.85],[830,210,1.4,.75],[700,150,3.1,.6]].forEach(([y,th,ph,op],i)=>ribbon(svg,{x0:-120,x1:1250,y0:y,tilt:60,amp:60,f:.0034,ph,amp2:24,f2:.008,ph2:ph*2,th,pal:AM,op,fadeL:.08,fadeR:.55,hair:4}));
+ // blue strands (rising right)
+ [[980,340,0,.85],[930,280,1.1,.75],[880,220,2.2,.7],[1030,200,4.4,.6]].forEach(([y,th,ph,op],i)=>ribbon(svg,{x0:560,x1:2040,y0:y,tilt:-90,rise:470,amp:55,f:.0032,ph,amp2:22,f2:.009,ph2:ph*1.7,th,pal:BL,op,fadeL:.35,fadeR:.04,hair:4}));
+ // white crest highlight
+ ribbon(svg,{x0:500,x1:2040,y0:800,tilt:-60,rise:430,amp:45,f:.0035,ph:2.6,th:120,pal:{hi:'#fff',lt:'#fff',md:'#e6f2ff',dk:'#b9dbff',dd:'#8fc0ff'},op:.8,fadeL:.4,fadeR:.04,hair:3});
+}
+// ---------- CONTENT ----------
+{const svg=mk('content');
+ glow(svg,1800,40,240,'#fff',.8);glow(svg,100,60,200,'#d6eaff',.6);
+ ribbon(svg,{x0:-80,x1:2000,y0:1040,tilt:-30,amp:22,f:.0028,ph:.5,th:150,pal:{hi:'#ffffff',lt:'#e3f0ff',md:'#bcdcff',dk:'#8fc0ff',dd:'#5d9bf0'},op:.6,fadeL:.05,fadeR:.05,hair:4});
+ [[1010,130,.3,.8],[1040,100,1.6,.7]].forEach(([y,th,ph,op])=>ribbon(svg,{x0:-120,x1:1300,y0:y,tilt:20,amp:26,f:.0036,ph,amp2:10,f2:.009,ph2:ph*2,th,pal:AM,op,fadeL:.08,fadeR:.5,hair:6}));
+ [[1050,200,0,.85],[1010,150,1.2,.75],[985,110,2.4,.7],[1080,120,3.5,.6]].forEach(([y,th,ph,op])=>ribbon(svg,{x0:350,x1:2040,y0:y,tilt:-30,rise:200,amp:26,f:.0034,ph,amp2:10,f2:.009,ph2:ph*1.7,th,pal:BL,op,fadeL:.3,fadeR:.04,hair:7}));
+}
+</script></body></html>
