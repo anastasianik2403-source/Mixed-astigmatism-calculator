@@ -32,9 +32,13 @@ THEMES = [
          acc="6F9AF0", c1="4A78E0", c1l="B7CCF7", c2="1F2A44", c2l="A9B3CC", card='border', cfill="FFFFFF", cline="C7D6F7", node='soft', num='circlesoft', L=0.8, chrome='biz', head_fill="86AAF2"),
     dict(n=7, name="Template7_Purple-Minimal", head=SANS, hbold=True, tsize=26, tcase=None, talign='l', tcolor="14141A", ink="2A2A33", mute="8A8A99", hair="D9D9E3",
          acc="6F66D9", c1="5B52C9", c1l="B8B2EE", c2="14141A", c2l="A6A6B3", card='none', cfill="FFFFFF", cline=None, node='orb', num='paren', L=1.1, chrome='min', head_fill="5B52C9"),
+    dict(n=8, name="Template8_Amber-Gradient", head=SANS, hbold=False, tsize=27, tcase=None, talign='l', tcolor="1E1E1E", ink="2B2B2B", mute="8C7B5E", hair="F0DDB5",
+         acc="D98200", c1="CC7A00", c1l="FFDD8F", c2="3B3B3B", c2l="C9C4B8", card='shadow', cfill="FFFFFF", cline="F3E6C8", node='soft', num='plain', L=0.8, chrome='top-right', head_fill="CC7A00"),
+    dict(n=9, name="Template9_Peach-Soft", head=SANS, hbold=False, tsize=27, tcase=None, talign='l', tcolor="6B2E1A", ink="6B2E1A", mute="A27968", hair="F2C9BB",
+         acc="C9593B", c1="C9593B", c1l="F8CDBF", c2="6B2E1A", c2l="CDB3A8", card='pill', cfill="FCE6DE", cline=None, node='soft', num='circlesoft', L=0.8, chrome='top-right', head_fill="C9593B"),
 ]
 
-FAM = {1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
+FAM = {8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
 for _t in THEMES: _t['fam'] = FAM[_t['n']]
 
 SECTIONS = {2: "Актуальность", 3: "Актуальность", 4: "Цель", 5: "Цель и методы", 6: "Цель и методы", 7: "Цель и методы", 8: "Технология", 9: "Технология", 10: "Технология",
@@ -140,6 +144,7 @@ def card(x, y, w, h):
     if k == 'shadow': rect(x, y, w, h, T['cfill'], T['cline'], 0.75, MSO_SHAPE.ROUNDED_RECTANGLE, 0.05, shadow=True)
     elif k == 'flat': rect(x, y, w, h, T['cfill'])
     elif k == 'line': rect(x, y, w, h, "FFFFFF", T['cline'], 0.9, MSO_SHAPE.ROUNDED_RECTANGLE, 0.03, alpha=70)
+    elif k == 'pill': rect(x, y, w, h, T['cfill'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.12)
     elif k == 'border': rect(x, y, w, h, T['cfill'], T['cline'], 0.9, MSO_SHAPE.ROUNDED_RECTANGLE, 0.04)
     elif k == 'none': hair(x, y, x + w, y); hair(x, y + h, x + w, y + h)
 
@@ -304,6 +309,7 @@ AFF = ["ФГБОУ ВО «Российский университет медиц
 
 def s_title():
     new('title'); n = T['n']
+    if n in (8, 9): return _title89()
     if n == 1:
         for i, t in enumerate((AUTHOR, FORUM)):
             rect(0.8 + i * 1.75, 0.45, 1.6 + (0.5 if i else 0), 0.32, "FFFFFF", T['hair'], 0.6, MSO_SHAPE.ROUNDED_RECTANGLE, 0.5, raw=True)
@@ -343,6 +349,22 @@ def s_title():
         txt(1.1, 4.6, 11.2, 0.5, f"(  {SUBT}  )", size=18, color=T['ink'], font=SERIF, align='c', raw=True)
         txt(1.1, 6.55, 6, 0.4, f"{SPEAKER}", size=9, bold=True, color=T['tcolor'], raw=True)
         txt(6.0, 6.55, 6.6, 0.4, COAUTH, size=8.5, color=T['mute'], align='r', raw=True)
+
+
+def _title89():
+    n = T['n']
+    if n == 8:
+        txt(0.8, 0.3, 5, 0.25, FORUM, size=9, bold=True, color=T['tcolor'], raw=True)
+        txt(0.8, 1.9, 8.6, 3.0, [[("Современный подход к ", {}), ("хирургической коррекции смешанного астигматизма", {'bold': True})]], size=34, color=T['tcolor'], spacing=1.05, raw=True)
+        txt(0.8, 4.35, 8.2, 0.6, SUBT, size=17, color=T['ink'], raw=True)
+        txt(0.8, 5.4, 8, 0.9, [[(SPEAKER, {'bold': True})], [(COAUTH, {'size': 10, 'color': T['mute']})], [(AFF[0], {'size': 8.5, 'color': T['mute']})], [(AFF[1], {'size': 8.5, 'color': T['mute']})]], size=12, spacing=1.15, after=2, raw=True)
+    else:
+        txt(0.8, 1.5, 8.6, 3.2, [[(MAIN, {})]], size=36, color=T['tcolor'], spacing=1.02, raw=True)
+        txt(0.8, 4.2, 8.2, 0.6, SUBT, size=17, color=T['ink'], raw=True)
+        for i, (t, w) in enumerate(((SPEAKER, 3.4), ("Офтальмологический форум", 3.3))):
+            x = 0.8 + (0 if i == 0 else 3.6)
+            rect(x, 5.3, w, 0.42, T['c1l'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5, raw=True); txt(x, 5.3, w, 0.42, t, size=10.5, bold=True, color=T['c2'], align='c', anchor='m', raw=True)
+        txt(0.8, 5.95, 8.5, 0.7, [[(COAUTH, {'size': 10})], [(AFF[0], {'size': 8.5, 'color': T['mute']})], [(AFF[1], {'size': 8.5, 'color': T['mute']})]], size=10, spacing=1.15, raw=True)
 
 
 def s_aktual1():
@@ -549,8 +571,8 @@ def s_model():
         card(x - 0.05, 1.3, 3.8, 2.85)
         pic(im, x, 1.35, 3.7, 2.45); txt(x, 3.82, 3.7, 0.25, cap, size=9.5, align='c', color=T['mute'])
     txt(0.8, 4.4, 11.8, 0.3, "На основании математической модели построена геометрическая (схематическая) модель лентикулы при смешанном астигматизме", size=11.5, bold=True)
-    rect(0.8, 4.9, 7.0, 2.0, T['c2'] if T['n'] in (1, 4, 6, 3) else T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE if T['card'] != 'none' else MSO_SHAPE.RECTANGLE, adj=0.06) if T['n'] in (1, 3, 4, 6) else rect(0.8, 4.9, 7.0, 2.0, "FFFFFF", T['hair'], 0.9)
-    dark = T['n'] in (1, 3, 4, 6)
+    rect(0.8, 4.9, 7.0, 2.0, T['c2'] if T['n'] in (1, 4, 6, 3, 8, 9) else T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE if T['card'] != 'none' else MSO_SHAPE.RECTANGLE, adj=0.06) if T['n'] in (1, 3, 4, 6, 8, 9) else rect(0.8, 4.9, 7.0, 2.0, "FFFFFF", T['hair'], 0.9)
+    dark = T['n'] in (1, 3, 4, 6, 8, 9)
     fc = "FFFFFF" if dark else T['tcolor']; fm = "D5E3F5" if dark else T['mute']
     txt(1.05, 5.0, 6.5, 0.25, "Эмпирическая формула расчёта максимальной толщины лентикулы", size=9.5, bold=True, color=fm)
     txt(1.05, 5.3, 6.5, 0.5, "T(r,θ) = C + A·(r/R)²·cos(2(θ − ось))", size=20, bold=True, color=fc)
@@ -643,6 +665,12 @@ def s_conclusions():
 
 def s_end():
     new('title'); n = T['n']
+    if n in (8, 9):
+        txt(0.8, 2.0, 8, 1.4, 'Благодарю за внимание!', size=42, color=T['tcolor'], raw=True)
+        txt(0.8, 3.7, 8, 0.4, 'anastasianik2403@gmail.com', size=15, color=T['acc'], raw=True)
+        txt(0.8, 4.3, 8, 0.4, SPEAKER + '  ·  ' + FORUM, size=11, color=T['mute'], raw=True)
+        pic('p20_294.png', 8.6, 2.2, 3.9, 3.3)
+        return
     if n == 1:
         txt(0.8, 1.9, 7.2, 1.6, "Благодарю за внимание!", size=42, bold=True, color=T['tcolor'], spacing=1.0, raw=True)
         rect(0.8, 4.0, 5.6, 0.5, T['acc'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5, raw=True); txt(0.8, 4.0, 5.6, 0.5, "anastasianik2403@gmail.com", size=13, bold=True, color="FFFFFF", align='c', anchor='m', raw=True)
@@ -709,7 +737,7 @@ def s_ranges_tbl():
         txt(x + 0.1, 1.4, w - 0.2, 0.5, t, size=11.5, bold=True, color="FFFFFF", align='c', anchor='m')
     for i, (lab, a, b) in enumerate(rows):
         y = 1.98 + i * 0.78
-        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] == 2 else "F1F6FC" if T['n'] != 3 else "ECF8F5")
+        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else "F1F6FC" if T['n'] != 3 else "ECF8F5")
         hair(0.8, y + 0.74, 12.5, y + 0.74)
         txt(0.95, y, 2.9, 0.74, lab, size=11.5, bold=True, anchor='m')
         txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['c1']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
@@ -734,7 +762,7 @@ def s_steps_v():
     xs = [0.8 + i * 2.37 for i in range(5)]
     tt = T['tcolor'] if n != 3 else T['acc']
     photo_default = True
-    if n in (1, 4):
+    if n in (1, 4, 9):
         for i, (inner, ttl, body) in enumerate(STEPS):
             last = i == 4; x = xs[i]
             card(x, 1.75, 2.25, 3.4)
@@ -786,7 +814,7 @@ def build(theme):
     global T, prs, PAGE
     T = theme; PAGE = 0
     prs = Presentation(); prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
-    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
+    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6, 8, 9) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
     s_p_smile(); s_p_fl(); s_model(); s_acuity(); s_refraction(); s_safety(); s_predict(); s_conclusions(); s_end()
     os.makedirs("../presentations", exist_ok=True)
     out = f"../presentations/{theme['name']}.pptx"
