@@ -295,6 +295,34 @@ def o_steps():
     add_anim(sl, groups)
 
 
+def _oval(cx, cy, d, fill=None, line=None, lw=1.5, dash=None, alpha=None):
+    return b.rect(cx - d / 2 / b.sx(), cy - d / 2, d / b.sx(), d, fill, line, lw, MSO_SHAPE.OVAL, dash=dash, alpha=alpha)
+
+
+def _tile(x, y, w, h, n, text, size=11):
+    c = T(); b.rect(x, y, w, h, tint(2)); b.txt(x + 0.2, y, 0.7, h, f"0{n}", size=24, bold=True, color=c['acc'], anchor='m'); b.txt(x + 0.9, y, w - 1.1, h, text, size=size, anchor='m', spacing=1.08)
+
+
+def o_aktual1():
+    """Slide 2: 'orbit' layout."""
+    b.slide("Актуальность"); c = T()
+    HEAD = "Хирургическая коррекция смешанного астигматизма"
+    _tile(0.8, 1.4, 5.0, 1.0, 1, c4.B1, 11); _tile(6.0, 1.4, 6.55, 1.0, 2, c4.B2, 11)
+    b.txt(2.6, 2.55, 8.1, 0.5, HEAD, size=20, bold=True, color=c['tcolor'], align='c', anchor='m')
+    cx, cy = 6.67, 4.75
+    _oval(cx, cy, 3.5, None, c['hair'], 1.0, MSO_LINE.DASH); _oval(cx, cy, 2.8, "FFFFFF", c['hair'], 1.0)
+    b.pic("p2_22.png", cx - 1.35, cy - 1.0, 2.7, 2.0)
+    _oval(2.35, 4.45, 2.1, c['s2l'], None, alpha=60); _oval(2.35, 4.45, 1.7, "FFFFFF", c['s2'], 2.0)
+    b.txt(1.5, 4.0, 1.7 / b.sx(), 0.9, [[("Фемто-", {'bold': True, 'size': 13, 'color': c['s2t']})], [("ЛАЗИК", {'bold': True, 'size': 13, 'color': c['s2t']})]], align='c', anchor='m')
+    _oval(10.98, 4.45, 2.1, c['s1l'], None, alpha=60); _oval(10.98, 4.45, 1.7, "FFFFFF", c['s1'], 2.0, MSO_LINE.DASH)
+    b.txt(10.13, 3.95, 1.7 / b.sx(), 1.0, "?", size=48, bold=True, color=c['s1'], align='c', anchor='m')
+    b.hair(3.4, 4.45, 4.9, 4.7, c['s2'], 2.0); b.hair(8.45, 4.7, 9.9, 4.45, c['s1'], 2.0, MSO_LINE.DASH)
+    chip(1.55, 5.65, 1.6, 0.32, "золотой стандарт", c['s2'], size=9)
+    b.txt(0.8, 6.05, 3.1, 0.9, [[("Эксимерлазерная технология (ФемтоЛАЗИК)", {'bold': True, 'size': 11, 'color': c['s2t']})], [("Современный «золотой» стандарт в коррекции смешанного астигматизма", {'size': 9.5})]], align='c', spacing=1.05, after=2)
+    chip(10.2, 5.65, 1.55, 0.32, "предстоит изучить", c['s1'], size=9)
+    b.txt(9.4, 6.05, 3.1, 0.6, [[("Лентикулярная технология", {'bold': True, 'size': 12, 'color': c['s1t']})]], align='c')
+
+
 OVR = {
     5: dict(aktual1=o_aktual1, aktual2=o_aktual2, methods=o_methods, diag=o_diag, steps=o_steps),
     7: dict(aktual1=o_aktual1, aktual2=o_aktual2, methods=o_methods, diag=o_diag, steps=o_steps),
