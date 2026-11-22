@@ -34,6 +34,9 @@ THEMES = [
          acc="6F66D9", c1="5B52C9", c1l="B8B2EE", c2="14141A", c2l="A6A6B3", card='none', cfill="FFFFFF", cline=None, node='orb', num='paren', L=1.1, chrome='min', head_fill="5B52C9"),
 ]
 
+FAM = {1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
+for _t in THEMES: _t['fam'] = FAM[_t['n']]
+
 SECTIONS = {2: "Актуальность", 3: "Актуальность", 4: "Цель", 5: "Цель и методы", 6: "Цель и методы", 7: "Цель и методы", 8: "Технология", 9: "Технология", 10: "Технология",
             11: "Цель и методы", 12: "Технология", 13: "Технология", 14: "Технология", 15: "Результаты", 16: "Результаты", 17: "Результаты", 18: "Результаты", 19: "Заключение"}
 
@@ -141,6 +144,17 @@ def card(x, y, w, h):
     elif k == 'none': hair(x, y, x + w, y); hair(x, y + h, x + w, y + h)
 
 
+def box(x, y, w, h):
+    if T['fam'] in ('cards', 'aqua'):
+        card(x, y, w, h)
+        if T['n'] in (3, 4): rect(x, y, w, 0.05, T['acc'])
+
+
+def vl(x1, y1, x2, y2):
+    if T['n'] in (3, 5, 7):
+        hair(x1, y1, x2, y2)
+
+
 def node(cx, cy, d, label=None, size=12, bold=False, strong=False, color=None):
     st = T['node']; col = T['c2'] if strong else T['c1']
     dd = d * sx()
@@ -175,7 +189,7 @@ def numlabel(n, x, y, w=0.7, h=0.4, size=None):
     elif k == 'paren':
         txt(x, y, w + 0.3, h, f"( {s} )", size=size or 11, color=T['acc'] if T['n'] == 3 else T['mute'], font=SERIF if T['n'] == 7 else SANS, anchor='m')
     elif k == 'orange':
-        txt(x, y, w, h, s, size=size or 15, color=T['acc'], anchor='m')
+        txt(x, y, w + 0.3, h, '+  ' + s, size=size or 15, color=T['acc'], anchor='m')
     else:
         txt(x, y, w, h, s, size=size or 12, bold=True, color=T['acc'], anchor='m')
 
@@ -231,7 +245,7 @@ def slide(title, sub=None):
         p = p.strip("*")
         runs.append((titletext(p), {'color': T['acc'] if (isk and T['n'] == 4) else T['tcolor']}))
     ty = 0.5 if ch not in ('pitch', 'biz') else 0.55
-    size = T['tsize'] if len(plain) < 46 else T['tsize'] - (6 if T['n'] == 2 else 3 if T['n'] != 4 else 1.5)
+    size = T['tsize'] if len(plain) < 46 else T['tsize'] - (8 if T['n'] == 2 else 3 if T['n'] != 4 else 1.5)
     if T['talign'] == 'c':
         txt(0.8, ty, 11.75, 0.5, [runs], size=size, bold=T['hbold'], font=T['head'], align='c', raw=True)
     else:
@@ -333,7 +347,8 @@ def s_title():
 
 def s_aktual1():
     slide("Актуальность")
-    hair(4.7, 0.5 if False else 1.35, 4.7, 3.55)
+    box(0.65, 1.25, 11.95, 2.4); box(0.65, 3.8, 11.95, 2.65)
+    vl(4.7, 1.35, 4.7, 3.55)
     pic("p2_22.png", 0.8, 1.45, 3.5, 2.2)
     txt(5.1, 1.35, 7.4, 2.3, [[("•  ", {'color': T['acc'], 'bold': True}), "Астигматизм — мультифакторное состояние с выраженным наследственным компонентом."],
                                [("•  ", {'color': T['acc'], 'bold': True}), "Полногеномные исследования (Shing E. et al., 2024) выявили свыше 50 полиморфизмов в 10 генах, включая локус PDGFRA, регулирующий кривизну роговицы."]], size=14.5, after=10, spacing=1.1)
@@ -349,6 +364,7 @@ def s_aktual1():
 
 def s_aktual2():
     slide("Актуальность")
+    box(0.65, 1.3, 8.5, 1.7); box(3.75, 3.2, 6.2, 1.9); box(0.65, 3.2, 3.0, 3.6)
     txt(0.8, 1.5, 8.2, 1.2, [[("Пилотное исследование на платформе ", {}), ("VisuMax", {'bold': True}), (" (Carl Zeiss Meditec AG) показало возможность коррекции смешанного астигматизма методом лентикулярной хирургии (Ganesh S. et al., 2024), однако методика пока не применяется в стандартной практике.", {})]], size=13, spacing=1.1)
     hair(0.8, 2.9, 8.9, 2.9); dot(8.9, 2.9)
     txt(3.9, 3.4, 5.9, 1.3, [[("Экспериментальное исследование ex-vivo (11 свиных глаз) на платформе ", {}), ("Elita", {'bold': True}), (", Johnson and Johnson Surgical Vision, Inc. (США) свидетельствуют о технической возможности коррекции смешанного астигматизма и гиперметропии.", {})]], size=13, spacing=1.1)
@@ -362,13 +378,15 @@ def s_aktual2():
 
 def s_goal():
     slide("Цель")
-    hair(4.7, 1.35, 4.7, 4.6)
+    box(4.95, 2.3, 7.65, 2.4)
+    vl(4.7, 1.35, 4.7, 4.6)
     txt(5.1, 2.5, 7.4, 2.0, "Разработать лентикулярную технологию для коррекции смешанного астигматизма", size=26, color=T['tcolor'] if T['n'] != 3 else T['ink'], spacing=1.1)
     pic("p4_74.png", 1.2, 4.55, 4.6, 2.5)
 
 
 def s_methods():
     slide("Материалы и методы")
+    box(0.65, 1.2, 5.9, 4.2); box(6.75, 1.2, 5.9, 4.2); box(0.65, 5.5, 11.95, 1.5)
     hair(3.9, 2.85, 9.4, 2.85)
     node(3.9, 2.85, 2.2, [[("SMILE", {'size': 20, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12)
     node(9.4, 2.85, 2.2, [[("ФемтоЛАЗИК", {'size': 15, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12, strong=True)
@@ -376,7 +394,7 @@ def s_methods():
     txt(2.0, 4.55, 3.8, 1.0, [[("Лентикулярная технология (SMILE)", {'bold': True, 'size': 12.5, 'color': T['tcolor'] if T['n'] != 3 else T['acc']})], [("Фемтосекундная лазерная установка VisuMax (Carl Zeiss Meditec AG, Германия)", {'italic': True, 'size': 9.5})]], align='c', spacing=1.1, after=3)
     txt(7.5, 4.55, 3.8, 1.0, [[("Эксимерлазерная технология (ФемтоЛАЗИК)", {'bold': True, 'size': 12.5, 'color': T['tcolor'] if T['n'] != 3 else T['acc']})], [("Интегрированная платформа WaveLight Refractive Suite (WaveLight FS200 + WaveLight EX500, Alcon Laboratories Inc., США)", {'italic': True, 'size': 9.5})]], align='c', spacing=1.1, after=3)
     pic("p5_87.png", 0.7, 1.7, 1.7, 1.5); pic("p5_86.png", 0.95, 3.2, 1.2, 1.2)
-    pic("p5_88.png", 11.0, 1.7, 1.8, 1.5); pic("p5_89.png", 11.3, 3.2, 1.2, 1.2)
+    pic("p5_88.png", 10.8, 1.7, 1.7, 1.5); pic("p5_89.png", 11.05, 3.2, 1.2, 1.2)
     txt(0.8, 5.6, 6, 0.3, "Наблюдение проводилось до операции и в стандартные сроки", size=10, bold=True, color=T['tcolor'] if T['n'] != 3 else T['acc'])
     hair(0.8, 6.4, 12.5, 6.4)
     for i, lab in enumerate(["До операции", "1 сутки", "3 месяца", "6 месяцев"]):
@@ -419,7 +437,8 @@ def s_ranges():
 
 def s_diag():
     slide("Методы диагностики")
-    hair(6.65, 1.3, 6.65, 4.95)
+    box(0.65, 1.2, 5.85, 3.75); box(6.85, 1.2, 5.75, 3.75); box(0.65, 5.1, 5.85, 1.85); box(6.85, 5.1, 5.75, 1.85)
+    vl(6.65, 1.3, 6.65, 4.95)
     head(0.8, 1.3, 5.5, "Стандартные методы диагностики", T['c1'], 13)
     head(7.0, 1.3, 5.5, "Специальные методы диагностики", T['c1'], 13)
     std = [("Визометрия", "НКОЗ и МКОЗ в естественных условиях и при медикаментозном мидриазе"), ("Рефрактометрия, кератометрия", "в естественных условиях и при медикаментозном мидриазе"), ("Тонометрия, биометрия, периметрия", ""), ("Биомикроскопия и офтальмоскопия", "")]
@@ -478,7 +497,8 @@ def s_patent():
 
 def s_criteria():
     slide("Критерии включения и исключения")
-    hair(6.65, 1.3, 6.65, 6.8)
+    box(0.65, 1.2, 5.85, 5.75); box(6.85, 1.2, 5.75, 5.75)
+    vl(6.65, 1.3, 6.65, 6.8)
     node(1.1, 1.65, 0.6, "✓", 14, True)
     txt(1.6, 1.35, 4.5, 0.6, "Критерии включения", size=16, bold=True, anchor='m', color=T['tcolor'] if T['n'] != 3 else T['acc'])
     inc = ["Возраст 18 лет и старше", "Диагноз «смешанный астигматизм»", "Максимально корригированная острота зрения (МКОЗ) 0,3 и выше", "Толщина роговицы от 470 мкм и более", "Отсутствие признаков кератоконуса по BAD"]
@@ -498,6 +518,7 @@ def s_criteria():
 def params(title, sub, rows):
     slide(title, sub)
     n = len(rows); rh = min(0.6, 5.0 / n)
+    box(0.65, 1.5, 6.9, n * rh + 0.3)
     for i, (a, b) in enumerate(rows):
         y = 1.65 + i * rh
         hair(0.8, y, 7.4, y)
@@ -539,8 +560,9 @@ def s_model():
 
 def s_acuity():
     slide("Динамика НКОЗ и МКОЗ в исследуемых группах")
+    box(0.65, 1.2, 5.9, 5.75); box(6.75, 1.2, 5.9, 5.75)
     cats = ["До операции", "1-е сутки", "3 мес.", "6 мес."]
-    hair(6.65, 1.3, 6.65, 6.8)
+    vl(6.65, 1.3, 6.65, 6.8)
     head(0.8, 1.3, 3.6, "Лентикулярная хирургия (SMILE)", T['c1'], 13, fill=T['c1'] if T['n'] == 6 else None)
     bar_chart(0.7, 1.75, 5.8, 5.1, cats, [("НКОЗ", (0.34, 0.73, 0.88, 0.75)), ("МКОЗ", (0.91, 0.87, 0.98, 1.00))], [T['c1'], T['c1l']], 0, 1.2, 0.2)
     head(6.95, 1.3, 3.0, "ФемтоЛАЗИК", T['c2'] if T['n'] != 7 else T['ink'], 13, fill=T['c2'] if T['n'] == 6 else None)
@@ -550,6 +572,7 @@ def s_acuity():
 
 def s_refraction():
     slide("Динамика рефракционного компонента")
+    box(0.65, 1.2, 6.9, 5.75); box(7.7, 1.2, 4.95, 5.75)
     cats = ["До операции", "1-е сутки", "3 мес.", "6 мес."]
     S = [("SMILE — Sph", T['c1'], False, (0.54, 0.22, 0.37, 0.62)), ("SMILE — Cyl", T['c1'], True, (-3.07, -0.51, -0.44, -0.62)),
          ("ФемтоЛАЗИК — Sph", T['c2'], False, (1.25, -0.20, 0.02, 0.31)), ("ФемтоЛАЗИК — Cyl", T['c2'], True, (-3.24, -1.13, -1.19, -1.25))]
@@ -573,7 +596,7 @@ def s_refraction():
         for k, v in enumerate(vals):
             s_ = ("+" if v > 0 else "−" if v < 0 else "") + f"{abs(v):.2f}".replace(".", ",")
             txt(3.6 + k * 0.95, yy, 0.9, 0.44, s_, size=10.5, bold=True, align='c', anchor='m')
-    hair(0.8, 6.75, 7.3, 6.75); hair(7.7, 1.3, 7.7, 6.8)
+    hair(0.8, 6.75, 7.3, 6.75); vl(7.7, 1.3, 7.7, 6.8)
     small = [("Пахиметрия, мкм", (554, 537), (501, 501), 440, 600, 40, '0'), ("Кератометрия K1, D", (41.58, 41.69), (40.78, 41.83), 38, 46, 2, '0.00'), ("Кератометрия K2, D", (44.44, 44.76), (41.78, 42.83), 38, 46, 2, '0.00')]
     for i, (ttl, a, b, lo, hi, mj, f) in enumerate(small):
         yy = 1.3 + i * 1.85
@@ -609,9 +632,10 @@ def s_conclusions():
              ("НКОЗ и МКОЗ", "НКОЗ повысилась в обеих группах (SMILE — с 0,34 до 0,88; ФемтоЛАЗИК — с 0,32 до 0,75): лентикулярная технология обеспечивает более быстрое и полное зрительное восстановление без коррекции. МКОЗ оставалась стабильно высокой (с 0,91 до 1,0 и с 0,87 до 0,95): ни одна из технологий не снижает потенциальную остроту зрения."),
              ("Рефракционный компонент", "Сферический компонент приблизился к эмметропии (с +0,54 до +0,37 D в SMILE и с +1,25 до +0,31 D в ФемтоЛАЗИК). Цилиндрический компонент существенно снизился (с −3,07 до −0,62 D и с −3,24 до −1,25 D), остаточный цилиндр в лентикулярной группе вдвое меньше."),
              ("Эффективна, безопасна, перспективна", "Разработанная лентикулярная технология эффективна, безопасна и перспективна для внедрения при смешанном астигматизме. Необходимы дальнейшее накопление клинических данных и их статистическая обработка.")]
-    hair(6.65, 1.3, 6.65, 6.8)
+    vl(6.65, 1.3, 6.65, 6.8)
     for i, (t, b) in enumerate(items):
         x = 0.8 + (i % 2) * 6.1; y = 1.35 + (i // 2) * 2.85
+        box(x - 0.15, y - 0.05, 5.9, 2.7)
         numlabel(i + 1, x, y, 0.8, 0.5, 15 if T['num'] in ('dot', 'orange', 'plain') else None)
         txt(x + 0.95, y + 0.02, 4.8, 0.5, t, size=14, bold=True, anchor='m', color=T['tcolor'] if T['n'] != 3 else T['acc'])
         txt(x + 0.95, y + 0.7, 4.8, 1.95, b, size=12, spacing=1.12)
@@ -649,11 +673,120 @@ def s_end():
         pic("p20_294.png", 5.0, 4.8, 3.3, 2.2)
 
 
+
+def _demo():
+    hair(0.8, 5.2, 12.5, 5.2)
+    txt(0.8, 5.4, 3, 0.25, "Распределение по полу, n", size=10, bold=True)
+    cd = CategoryChartData(); cd.categories = ["ФемтоЛАЗИК", "SMILE"]
+    cd.add_series("Мужчины", (7, 11)); cd.add_series("Женщины", (13, 9))
+    ch = sl.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, I(gx(0.7)), I(5.6), I(gw(5.6)), I(1.4), cd).chart
+    chart_clear(ch); ch.font.name = SANS
+    pl = ch.plots[0]; pl.gap_width = 45; pl.overlap = 100
+    for s, c in zip(pl.series, [T['c1'], T['c1l']]): s.format.fill.solid(); s.format.fill.fore_color.rgb = rgb(c)
+    pl.has_data_labels = True; pl.data_labels.font.size = Pt(10); pl.data_labels.font.bold = True; pl.data_labels.font.color.rgb = rgb("FFFFFF")
+    ch.value_axis.visible = False; ch.value_axis.has_major_gridlines = False
+    ch.category_axis.tick_labels.font.size = Pt(10); ch.category_axis.format.line.fill.background()
+    ch.has_legend = True; ch.legend.position = XL_LEGEND_POSITION.RIGHT; ch.legend.include_in_layout = False; ch.legend.font.size = Pt(9)
+    txt(7.4, 5.4, 3, 0.25, "Средний возраст", size=10, bold=True)
+    node(8.4, 6.2, 1.15, [[("31,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10)
+    node(11.0, 6.2, 1.15, [[("29,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, strong=True)
+    txt(7.6, 6.85, 1.6, 0.2, "SMILE", size=8.5, color=T['mute'], align='c'); txt(10.2, 6.85, 1.6, 0.2, "ФемтоЛАЗИК", size=8.5, color=T['mute'], align='c')
+    txt(0.8, 7.02, 6, 0.15, "* M ± SD — среднее ± стандартное отклонение", size=6.5, italic=True, color=T['mute'])
+
+
+def s_ranges_tbl():
+    slide("Диапазон **рефракционных значений** в исследуемых группах")
+    cols = [(0.8, 3.1), (4.0, 4.1), (8.2, 4.3)]
+    rows = [("Сферический компонент (Sph)", ("от +0,25 до +1,75 D", "M ± SD +0,54 ± 0,39"), ("от +0,25 до +3,00 D", "M ± SD +1,25 ± 0,81")),
+            ("Цилиндрический компонент (Cyl)", ("от −2,00 до −5,00 D", "M ± SD −3,07 ± 0,93"), ("от −1,25 до −6,00 D", "M ± SD −3,24 ± 2,03")),
+            ("Кератометрия, D", ("K1 41,58 · K2 44,44", "K AVE 43,00"), ("K1 41,69 · K2 44,76", "K AVE 43,22")),
+            ("Пахиметрия, мкм", ("от 494 до 615 мкм", "M ± SD 554,1 ± 36,2"), ("от 483 до 596 мкм", "M ± SD 537,1 ± 30,8"))]
+    kind = MSO_SHAPE.ROUNDED_RECTANGLE if T['n'] in (1, 6) else MSO_SHAPE.RECTANGLE
+    rect(0.8, 1.4, 3.1, 0.5, T['c2'] if T['n'] == 4 else T['head_fill'], kind=kind, adj=0.3 if kind != MSO_SHAPE.RECTANGLE else None)
+    txt(0.9, 1.4, 2.9, 0.5, "Показатель", size=11.5, bold=True, color="FFFFFF", anchor='m')
+    for (x, w), t, c in zip(cols[1:], ("Лентикулярная технология (SMILE)", "Эксимерлазерная технология (ФемтоЛАЗИК)"), (T['c1'], T['c2'])):
+        rect(x, 1.4, w, 0.5, c, kind=kind, adj=0.3 if kind != MSO_SHAPE.RECTANGLE else None)
+        txt(x + 0.1, 1.4, w - 0.2, 0.5, t, size=11.5, bold=True, color="FFFFFF", align='c', anchor='m')
+    for i, (lab, a, b) in enumerate(rows):
+        y = 1.98 + i * 0.78
+        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] == 2 else "F1F6FC" if T['n'] != 3 else "ECF8F5")
+        hair(0.8, y + 0.74, 12.5, y + 0.74)
+        txt(0.95, y, 2.9, 0.74, lab, size=11.5, bold=True, anchor='m')
+        txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['c1']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
+        txt(8.2, y, 4.3, 0.74, [[(b[0], {'bold': True, 'size': 13, 'color': T['c2']})], [(b[1], {'size': 10.5})]], align='c', anchor='m')
+    _demo_shift()
+
+
+def _demo_shift():
+    _demo()
+
+
+STEPS = [("Допуск", "Условия допуска", ["Sph ≤ +1,75 D", "Cyl ≥ −5 D", "SE ≤ −0,75 D"]), ("Сфера", "Транспозиция сферы", ["SPH' = SPH + CYL"]), ("Цилиндр", "Инверсия цилиндра", ["CYL' = −CYL (знак +)"]),
+         ("Ось", "Коррекция оси", ["Ax ≤ 90° → +90°;", "AX > 90° → −90°.", "Ручная маркировка роговицы для минимизации циклоторсии (ось астигматизма)"]), ("Ввод", "Ввод данных в лазер", ["Ввод полученных рефракционных данных в фемтосекундную лазерную установку"])]
+REFS = "Розенблюм Ю.З. Оптометрия. СПб.: Гиппократ; 1996.  ·  Гамидов Г.А., Мушкова И.А., Костенев С.В., Гамидов А.А. Способ контроля циклоторсии глазного яблока при коррекции миопического астигматизма по технологии SMILE. Офтальмология. 2020; 17(3): 351-360."
+NOTE = "Согласно инструкции к VisuMax®, возможна коррекция близорукости от −0,50 до −10,00 дптр и астигматизма до −5,00 дптр"
+
+
+def s_steps_v():
+    n = T['n']
+    if n == 5: return s_steps()
+    slide("Лентикулярная технология коррекции смешанного астигматизма", "Транспозиция исходной рефракции (sph, cyl, ax) по разработанной технологии")
+    xs = [0.8 + i * 2.37 for i in range(5)]
+    tt = T['tcolor'] if n != 3 else T['acc']
+    photo_default = True
+    if n in (1, 4):
+        for i, (inner, ttl, body) in enumerate(STEPS):
+            last = i == 4; x = xs[i]
+            card(x, 1.75, 2.25, 3.4)
+            if last: rect(x, 1.75, 2.25, 3.4, T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.05)
+            fg = "FFFFFF" if last else T['ink']
+            txt(x + 0.18, 1.9, 1.7, 0.35, f"Шаг {i+1:02d}" if n == 1 else f"Шаг {i+1}", size=11, bold=True, color="FFFFFF" if last else T['acc'], anchor='m')
+            if n == 1: rect(x + 1.78, 1.92, 0.32, 0.32, "FFFFFF" if last else T['acc'], kind=MSO_SHAPE.OVAL); txt(x + 1.78, 1.92, 0.32, 0.32, "›", size=12, bold=True, color=T['c1'] if last else "FFFFFF", align='c', anchor='m')
+            else: txt(x + 1.7, 1.9, 0.4, 0.35, "→", size=12, bold=True, color="FFFFFF" if last else T['acc'], align='r', anchor='m')
+            hair(x + 0.18, 2.35, x + 2.07, 2.35, "FFFFFF" if last else T['hair'])
+            txt(x + 0.18, 2.5, 1.95, 0.55, ttl, size=12, bold=True, color="FFFFFF" if last else T['tcolor'], spacing=1.0)
+            txt(x + 0.18, 3.15, 1.95, 1.9, body, size=10, color=fg, spacing=1.08, after=3)
+    elif n == 6:
+        for i, (inner, ttl, body) in enumerate(STEPS):
+            x = xs[i]
+            rect(x, 1.7, 2.45, 0.62, T['c1'] if i == 4 else T['c1l'], kind=MSO_SHAPE.PENTAGON if i == 0 else MSO_SHAPE.CHEVRON)
+            txt(x + (0.2 if i == 0 else 0.45), 1.7, 1.7, 0.62, [[(f"ШАГ {i+1}", {'size': 8, 'bold': True}), ("  " + inner, {'size': 11, 'bold': True})]], color="FFFFFF" if i == 4 else T['c2'], anchor='m')
+            card(x, 2.5, 2.25, 2.65)
+            txt(x + 0.18, 2.62, 1.95, 0.55, ttl, size=11.5, bold=True, color=T['tcolor'], spacing=1.0)
+            txt(x + 0.18, 3.25, 1.95, 1.85, body, size=10, spacing=1.08, after=3)
+    elif n == 2:
+        photo_default = False
+        hs = [1.5, 2.0, 2.5, 3.0, 3.5]
+        for i, (inner, ttl, body) in enumerate(STEPS):
+            x = xs[i]; h = hs[i]; y = 5.35 - h
+            rect(x, y, 2.25, h, T['c1'] if i < 4 else T['c2'])
+            txt(x + 0.18, y + 0.12, 1.95, 0.4, f"Шаг {i+1}", size=16, color="FFFFFF", font=SERIF)
+            txt(x + 0.18, y + 0.55, 1.95, 0.5, ttl, size=11, bold=True, color="FFFFFF", spacing=1.0)
+            txt(x + 0.18, y + 1.0, 1.95, h - 1.05, body, size=9, color="EAF8FB", spacing=1.05, after=2)
+        pic("p8_153.png", 0.8, 1.5, 2.25, 2.1, frame=True)
+        txt(3.15, 1.65, 2.1, 1.2, "Маркерная разметка роговицы для контроля циклоторсии", size=9, italic=True, color=T['mute'])
+        txt(0.8, 5.65, 11.7, 0.7, NOTE, size=10.5, align='r')
+    else:  # 3, 7 timeline
+        hair(0.8, 3.1, 12.5, 3.1)
+        for i, (inner, ttl, body) in enumerate(STEPS):
+            cx = 1.9 + i * 2.5; last = i == 4
+            txt(cx - 1.1, 2.55, 2.2, 0.3, f"( Шаг {i+1} )", size=10.5, color=T['acc'] if n == 3 else T['mute'], font=SERIF if n == 7 else SANS, align='c')
+            dot(cx, 3.1, 0.16 if last else 0.08, T['acc'] if n == 3 else T['tcolor'])
+            txt(cx - 1.1, 3.5, 2.2, 0.35, ttl, size=12, bold=True, color=tt, align='c')
+            txt(cx - 1.1, 3.95, 2.2, 1.5, body, size=10, align='c', spacing=1.08, after=2)
+    if photo_default:
+        pic("p8_153.png", 0.8, 5.5, 2.2, 1.4, frame=True)
+        txt(3.15, 5.65, 3.3, 0.9, "Маркерная разметка роговицы для контроля циклоторсии", size=9, italic=True, color=T['mute'])
+        txt(7.1, 5.65, 5.4, 0.8, NOTE, size=10, align='r')
+    txt(0.8, 6.98, 12, 0.2, REFS, size=5.5, italic=True, color=T['mute'])
+
+
+
 def build(theme):
     global T, prs, PAGE
     T = theme; PAGE = 0
     prs = Presentation(); prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
-    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); s_ranges(); s_diag(); s_steps(); s_operation(); s_patent(); s_criteria()
+    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
     s_p_smile(); s_p_fl(); s_model(); s_acuity(); s_refraction(); s_safety(); s_predict(); s_conclusions(); s_end()
     os.makedirs("../presentations", exist_ok=True)
     out = f"../presentations/{theme['name']}.pptx"
