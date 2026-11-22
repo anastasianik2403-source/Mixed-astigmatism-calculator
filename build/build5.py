@@ -192,8 +192,111 @@ def o_steps():
     add_anim(sl, groups)
 
 
+from pptx.enum.dml import MSO_LINE
+
+
+def chip(x, y, w, h, text, fill, color="FFFFFF", size=9):
+    b.rect(x, y, w, h, fill, kind=b.MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5)
+    b.txt(x, y, w, h, text, size=size, bold=True, color=color, align='c', anchor='m')
+
+
+def o_aktual1():
+    b.slide("Актуальность")
+    c = T()
+    # two statements as numbered tiles
+    for i, (x, w, text) in enumerate(((0.8, 4.4, c4.B1), (5.4, 7.15, c4.B2))):
+        panel(x, 1.4, w, 1.2, c['acc'], tint(2))
+        b.txt(x + 0.2, 1.4, 0.7, 1.2, f"0{i+1}", size=26, bold=True, color=c['acc'], anchor='m')
+        b.txt(x + 0.95, 1.4, w - 1.15, 1.2, text, size=11.5 if i else 12, anchor='m', spacing=1.1)
+    # heading + eye with halo rings
+    b.txt(0.8, 2.85, 8.0, 0.55, "Хирургическая коррекция смешанного астигматизма", size=20, bold=True, color=c['tcolor'], anchor='m')
+    b.ring(11.0, 4.4, 3.4, c['hair'], 1.0, MSO_LINE.DASH); b.ring(11.0, 4.4, 2.7, c['hair'], 1.0)
+    b.pic("p2_22.png", 9.4, 3.15, 3.2, 2.5)
+    # fork connector
+    hx = 4.75
+    b.hair(hx, 3.45, hx, 3.78, c['mute'], 1.5); b.hair(2.75, 3.78, 6.75, 3.78, c['mute'], 1.5)
+    arrow(2.75, 3.78, 2.75, 4.2, c['s2'], 2.0); arrow(6.75, 3.78, 6.75, 4.2, c['s1'], 2.0)
+    # left card: FemtoLASIK (known, gold standard)
+    b.rect(0.8, 4.25, 3.9, 2.25, "FFFFFF", c['s2'], 1.5)
+    b.rect(0.8, 4.25, 3.9, 0.09, c['s2'])
+    chip(2.55, 4.0, 1.6, 0.34, "золотой стандарт", c['s2'], size=9)
+    b.txt(1.0, 4.5, 3.5, 0.75, "Эксимерлазерная технология (ФемтоЛАЗИК)", size=14, bold=True, color=c['s2t'], anchor='m', spacing=1.05)
+    b.txt(1.0, 5.3, 3.5, 1.1, "Современный «золотой» стандарт в коррекции смешанного астигматизма", size=11.5, spacing=1.1)
+    # right card: lenticular (open question)
+    b.rect(4.9, 4.25, 3.9, 2.25, "FFFFFF", c['s1'], 1.5, dash=MSO_LINE.DASH)
+    b.rect(4.9, 4.25, 3.9, 0.09, c['s1'])
+    chip(6.7, 4.0, 1.6, 0.34, "предстоит изучить", c['s1'], size=9)
+    b.txt(5.1, 4.5, 2.3, 1.2, "Лентикулярная технология", size=14, bold=True, color=c['s1t'], anchor='m', spacing=1.05)
+    b.ring(7.85, 5.4, 1.7, c['s1l'], 1.0)
+    b.rect(7.4, 4.95, 0.9 / b.sx(), 0.9, "FFFFFF", c['s1'], 2.0, MSO_SHAPE.OVAL)
+    b.txt(7.4, 4.95, 0.9 / b.sx(), 0.9, "?", size=32, bold=True, color=c['s1'], align='c', anchor='m')
+    c4.refs(6.62)
+
+
+def o_methods():
+    b.slide("Материалы и методы")
+    c = T(); sl = b.sl; groups = []
+    cards = [(0.8, "1", "ГРУППА 1", "SMILE", "Лентикулярная технология (SMILE)", "Фемтосекундная лазерная установка VisuMax (Carl Zeiss Meditec AG, Германия)", c['s1'], c['s1t'], tint(0), ("p5_87.png", "p5_86.png")),
+             (6.85, "2", "ГРУППА 2", "ФемтоЛАЗИК", "Эксимерлазерная технология (ФемтоЛАЗИК)", "Интегрированная платформа WaveLight Refractive Suite (WaveLight FS200 + WaveLight EX500, Alcon Laboratories Inc., США)", c['s2'], c['s2t'], tint(1), ("p5_88.png", "p5_89.png"))]
+    for x, num, lab, short, ttl, dev, col, colt, tin, imgs in cards:
+        def card(x=x, num=num, lab=lab, short=short, ttl=ttl, dev=dev, col=col, colt=colt, tin=tin, imgs=imgs):
+            w = 5.7
+            panel(x, 1.4, w, 4.65, col, tin)
+            kind = b.MSO_SHAPE.ROUNDED_RECTANGLE if stl() == 'round' else b.MSO_SHAPE.RECTANGLE
+            b.rect(x + 0.2, 1.6, w - 0.4, 0.5, col, kind=kind, adj=0.5 if kind != b.MSO_SHAPE.RECTANGLE else None)
+            b.txt(x + 0.4, 1.6, 3, 0.5, f"{lab}", size=10.5, bold=True, color="FFFFFF", anchor='m')
+            b.txt(x + 2.6, 1.6, w - 3.0, 0.5, short, size=12, bold=True, color="FFFFFF", align='r', anchor='m')
+            b.txt(x + 0.35, 2.2, w - 0.7, 0.55, ttl, size=15, bold=True, color=colt, anchor='m', spacing=1.05)
+            b.txt(x + 0.35, 2.78, w - 0.7, 0.6, dev, size=9.5, italic=True, spacing=1.05, color=c['mute'])
+            b.txt(x + 0.3, 3.35, 1.7, 1.0, "20", size=60, bold=True, color=col, anchor='m')
+            b.txt(x + 1.85, 3.5, 1.6, 0.75, [[("пациентов", {'bold': True})], [("(40 глаз)", {})]], size=12, anchor='m', spacing=1.1)
+            b.pic(imgs[0], x + 0.3, 4.4, 3.0, 1.5); b.pic(imgs[1], x + 3.6, 4.35, 1.8, 1.6)
+        groups.append(grab(card))
+    def lab():
+        b.txt(0.8, 6.2, 3.4, 0.7, "Наблюдение проводилось до операции и в стандартные сроки", size=10.5, bold=True, anchor='m', spacing=1.1)
+        b.hair(4.4, 6.55, 12.5, 6.55, c['acc'], 1.5)
+    groups.append(grab(lab))
+    for i, t in enumerate(c4.TIMELINE):
+        def ms(i=i, t=t):
+            cx = 5.2 + i * 2.35
+            b.rect(cx - 0.13, 6.42, 0.26 / b.sx(), 0.26, c['acc'] if i else "FFFFFF", c['acc'], 1.5, MSO_SHAPE.OVAL)
+            b.txt(cx - 1.0, 6.72, 2.0, 0.25, t, size=10.5, align='c')
+        groups.append(grab(ms))
+    add_anim(sl, groups)
+
+
+def o_steps():
+    b.slide("Лентикулярная технология коррекции смешанного астигматизма")
+    c = T(); sl = b.sl; groups = []
+    b.rect(0.8, 1.35, 8.4, 0.44, None, c['acc'], 1.0)
+    b.txt(0.95, 1.35, 8.2, 0.44, "Транспозиция исходной рефракции (sph, cyl, ax) по разработанной технологии:", size=11.5, bold=True, anchor='m')
+    steps = [("1", "Условия допуска:", ["Sph ≤ +1,75D", "Cyl ≥ −5D", "SE ≤ −0,75D"]), ("2", "Транспозиция сферы", ["SPH' = SPH + CYL"]), ("3", "Инверсия цилиндра", ["CYL' = −CYL (знак +)"]),
+             ("4", "Коррекция оси", ["Ax ≤ 90° → +90°;", "AX > 90° → −90°.", "Ручная маркировка роговицы для минимизации циклоторсии (ось астигматизма)"]),
+             ("5", "Ввод данных в лазер", ["Ввод полученных рефракционных данных в фемтосекундную лазерную установку", "(Согласно инструкции к VisuMax®, возможна коррекция близорукости от −0,50 дптр до −10,00 дптр и астигматизма до −5,00 дптр)"])]
+    hs = [2.25, 2.7, 3.15, 3.7, 4.3]; bottom = 6.7
+    for i, (n, ttl, body) in enumerate(steps):
+        x = 0.8 + i * 2.37; h = hs[i]; y = bottom - h; last = i == 4
+        def box(i=i, n=n, ttl=ttl, body=body, x=x, h=h, y=y, last=last):
+            fill = c['acc'] if last else "FFFFFF"
+            b.rect(x, y, 2.27, h, fill, c['acc'], 1.2)
+            if not last: b.rect(x, y, 2.27, 0.09, c['acc'])
+            fg = "FFFFFF" if last else c['ink']
+            b.txt(x + 0.18, y + 0.15, 1.2, 0.7, f"0{n}", size=30, bold=True, color="FFFFFF" if last else c['acc'], anchor='m')
+            b.txt(x + 0.18, y + 0.88, 1.95, 0.5, ttl, size=12, bold=True, color=fg, anchor='m', spacing=1.05)
+            if i == 4:
+                b.txt(x + 0.18, y + 1.45, 1.95, 1.35, body[0], size=10.5, color=fg, spacing=1.1)
+                b.txt(x + 0.18, y + 2.85, 1.95, 1.4, body[1], size=8.5, color="E4E8F6", spacing=1.08)
+            else:
+                b.txt(x + 0.18, y + 1.42, 1.95, h - 1.5, [[(l, {'size': 10 if len(l) > 28 else 12, 'bold': len(l) < 28})] for l in body], color=fg, spacing=1.08, after=2)
+        groups.append(grab(box))
+        if i == 3:
+            groups.append(grab(lambda: [b.pic("p8_153.png", 0.8, 2.0, 2.3, 1.55, frame=True), b.txt(0.8, 3.6, 2.3, 0.36, "Маркерная разметка роговицы для контроля циклоторсии", size=7.5, italic=True, color=c['mute'], align='c')]))
+    b.txt(0.8, 6.98, 12, 0.2, "Розенблюм Ю.З. Оптометрия. СПб.: Гиппократ; 1996.  ·  Гамидов Г.А. и др. Способ контроля циклоторсии глазного яблока при коррекции миопического астигматизма по технологии SMILE. Офтальмология. 2020; 17(3): 351-360.", size=5.5, italic=True, color=c['mute'])
+    add_anim(sl, groups)
+
+
 OVR = {
-    5: dict(aktual2=o_aktual2, methods=o_methods, diag=o_diag, steps=o_steps),
+    5: dict(aktual1=o_aktual1, aktual2=o_aktual2, methods=o_methods, diag=o_diag, steps=o_steps),
     7: dict(aktual1=o_aktual1, aktual2=o_aktual2, methods=o_methods, diag=o_diag, steps=o_steps),
     14: dict(aktual1=o_aktual1, goal=o_goal, methods=o_methods, diag=o_diag, steps=o_steps),
 }
