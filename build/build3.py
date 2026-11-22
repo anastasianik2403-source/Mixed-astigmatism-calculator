@@ -44,9 +44,11 @@ THEMES = [
          acc="0A63D1", c1="0B4AA8", c1l="9CC7F3", c2="0DA2F0", c2l="A5DCFA", card='border', cfill="FFFFFF", cline="BFD9F2", node='solid', num='circle', L=0.8, chrome='top-right', head_fill="0B4AA8"),
     dict(n=13, name="Template13_Orange-Cream", head=SANS, hbold=False, tsize=26, tcase=None, talign='l', tcolor="C8541C", ink="3A2A22", mute="8C7A70", hair="E5D6CA",
          acc="D45A14", c1="D45A14", c1l="F4B796", c2="5A4A42", c2l="CFC3BA", card='flat', cfill="EDE5DD", cline=None, node='soft', num='circle', L=0.8, chrome='top-right', head_fill="D45A14"),
+    dict(n=14, name="Template14_Slidesgo-Forensic", head="Assistant", hbold=False, tsize=25, tcase=None, talign='l', tcolor="010233", ink="010233", mute="5E6A8A", hair="C3CAE0",
+         acc="1D3B8A", c1="1D3B8A", c1l="AEBDE8", c2="8E98B8", c2l="D6DAE6", card='none', cfill="FFFFFF", cline=None, node='ring', num='plain', L=1.05, chrome='none', head_fill="1D3B8A"),
 ]
 
-FAM = {10: 'cards', 11: 'cards', 12: 'cards', 13: 'cards', 8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
+FAM = {14: 'lines', 10: 'cards', 11: 'cards', 12: 'cards', 13: 'cards', 8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
 for _t in THEMES: _t['fam'] = FAM[_t['n']]
 
 SECTIONS = {2: "Актуальность", 3: "Актуальность", 4: "Цель", 5: "Цель и методы", 6: "Цель и методы", 7: "Цель и методы", 8: "Технология", 9: "Технология", 10: "Технология",
@@ -164,7 +166,7 @@ def box(x, y, w, h):
 
 
 def vl(x1, y1, x2, y2):
-    if T['n'] in (3, 5, 7):
+    if T['n'] in (3, 5, 7, 14):
         hair(x1, y1, x2, y2)
 
 
@@ -322,6 +324,7 @@ def s_title():
     new('title'); n = T['n']
     if n in (8, 9): return _title89()
     if n in (10, 11, 12, 13): return _title_dark()
+    if n == 14: return _title_sg()
     if n == 1:
         for i, t in enumerate((AUTHOR, FORUM)):
             rect(0.8 + i * 1.75, 0.45, 1.6 + (0.5 if i else 0), 0.32, "FFFFFF", T['hair'], 0.6, MSO_SHAPE.ROUNDED_RECTANGLE, 0.5, raw=True)
@@ -394,6 +397,21 @@ def _title_dark():
     rect(bx, 5.1, 5.3 if not ctr else 6.9, 0.62, None, "FFFFFF", 1, MSO_SHAPE.ROUNDED_RECTANGLE, 0.5, raw=True)
     txt(bx + 0.2, 5.1, 5.0 if not ctr else 6.5, 0.62, [[(SPEAKER, {'bold': True})]], size=12.5, color="FFFFFF", anchor='m', align='l' if not ctr else 'c', raw=True)
     txt(0.8, 5.95, w, 0.9, [[(COAUTH, {'size': 10})], [(AFF[0], {'size': 8.5})], [(AFF[1], {'size': 8.5})]], size=10, color="E6E6EE", spacing=1.15, align=al, raw=True)
+
+
+def _title_sg():
+    txt(1.5, 1.9, 9.2, 2.2, [[("Современный подход к хирургической коррекции ", {}), ("смешанного астигматизма", {'color': T['acc']})], [("с применением фемтосекундной лентикулярной технологии", {'color': T['acc'], 'size': 20})]], size=30, color=T['tcolor'], spacing=1.1, after=4, raw=True)
+    hair(1.5, 4.25, 6.8, 4.25, T['tcolor'], 1.0, raw=True)
+    txt(1.5, 4.5, 8, 0.9, [[(SPEAKER, {'bold': True})], [(COAUTH, {'size': 10, 'color': T['mute']})], [(FORUM, {'size': 10, 'color': T['mute']})]], size=12, spacing=1.2, after=2, raw=True)
+    txt(1.5, 5.85, 8, 0.6, AFF, size=8.5, color=T['mute'], spacing=1.15, raw=True)
+
+
+def _end_sg():
+    txt(2.0, 2.4, 9.3, 1.2, "Благодарю за внимание!", size=40, color=T['tcolor'], align='c', raw=True)
+    hair(5.0, 3.55, 8.3, 3.55, T['tcolor'], 1.0, raw=True)
+    txt(2.0, 3.8, 9.3, 0.5, "anastasianik2403@gmail.com", size=16, color=T['acc'], align='c', raw=True)
+    txt(2.0, 4.4, 9.3, 0.4, SPEAKER + "  ·  " + FORUM, size=11, color=T['mute'], align='c', raw=True)
+    pic("p20_294.png", 5.4, 5.0, 2.6, 1.9)
 
 
 def s_aktual1():
@@ -694,6 +712,7 @@ def s_conclusions():
 
 def s_end():
     new('title'); n = T['n']
+    if n == 14: return _end_sg()
     if n in (10, 11, 12, 13):
         c = ACC2[n]; ctr = n == 12
         txt(0.8, 2.0, 11.7 if ctr else 8, 1.4, [[('БЛАГОДАРЮ ЗА ВНИМАНИЕ!' if n == 10 else 'Благодарю за внимание!', {})]], size=42, bold=(n != 11), color='FFFFFF', align='c' if ctr else 'l', raw=True)
@@ -773,7 +792,7 @@ def s_ranges_tbl():
         txt(x + 0.1, 1.4, w - 0.2, 0.5, t, size=11.5, bold=True, color="FFFFFF", align='c', anchor='m')
     for i, (lab, a, b) in enumerate(rows):
         y = 1.98 + i * 0.78
-        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else {10: "EFEADF", 11: "E6F7F3", 12: "EAF4FD", 13: "F3ECE4"}.get(T['n']) or "F1F6FC" if T['n'] != 3 else "ECF8F5")
+        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else {14: "E9ECF6", 10: "EFEADF", 11: "E6F7F3", 12: "EAF4FD", 13: "F3ECE4"}.get(T['n']) or "F1F6FC" if T['n'] != 3 else "ECF8F5")
         hair(0.8, y + 0.74, 12.5, y + 0.74)
         txt(0.95, y, 2.9, 0.74, lab, size=11.5, bold=True, anchor='m')
         txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['c1']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
@@ -850,7 +869,7 @@ def build(theme):
     global T, prs, PAGE
     T = theme; PAGE = 0
     prs = Presentation(); prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
-    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
+    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
     s_p_smile(); s_p_fl(); s_model(); s_acuity(); s_refraction(); s_safety(); s_predict(); s_conclusions(); s_end()
     os.makedirs("../presentations", exist_ok=True)
     out = f"../presentations/{theme['name']}.pptx"
