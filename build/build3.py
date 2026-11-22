@@ -48,6 +48,8 @@ THEMES = [
          acc="1D3B8A", c1="1D3B8A", c1l="AEBDE8", c2="8E98B8", c2l="D6DAE6", card='none', cfill="FFFFFF", cline=None, node='ring', num='plain', L=1.05, chrome='none', head_fill="1D3B8A"),
 ]
 
+for _t in THEMES: _t.update(s1="D2561F", s1l="F3B79C", s2="2F6FBF", s2l="A9C6EA", s1t="C8501F", s2t="2A5FA8")
+
 FAM = {14: 'lines', 10: 'cards', 11: 'cards', 12: 'cards', 13: 'cards', 8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
 for _t in THEMES: _t['fam'] = FAM[_t['n']]
 
@@ -170,8 +172,10 @@ def vl(x1, y1, x2, y2):
         hair(x1, y1, x2, y2)
 
 
-def node(cx, cy, d, label=None, size=12, bold=False, strong=False, color=None):
+def node(cx, cy, d, label=None, size=12, bold=False, strong=False, color=None, sem=None):
     st = T['node']; col = T['c2'] if strong else T['c1']
+    if sem == 'S': col = T['s1']
+    if sem == 'F': col = T['s2']
     dd = d * sx()
     if st == 'orb':
         ring(cx, cy, d * 1.45, "CFCBF0")
@@ -179,6 +183,8 @@ def node(cx, cy, d, label=None, size=12, bold=False, strong=False, color=None):
         sp = s._element.spPr
         e = sp.find(qn('a:solidFill')); sp.remove(e)
         c0, c1, c2 = ("EEECFC", "CFCAF6", "9C94EA") if strong else ("F6F5FE", "E1DEFA", "B9B3F0")
+        if sem == 'S': c0, c1, c2 = "FFF1E8", "F9CDB4", "EE9A6C"
+        if sem == 'F': c0, c1, c2 = "EAF2FD", "C3D8F5", "8AB1E8"
         g = etree.fromstring('<a:gradFill xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" rotWithShape="1"><a:gsLst>'
                              f'<a:gs pos="0"><a:srgbClr val="{c0}"/></a:gs><a:gs pos="62000"><a:srgbClr val="{c1}"/></a:gs><a:gs pos="100000"><a:srgbClr val="{c2}"/></a:gs></a:gsLst>'
                              '<a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>')
@@ -188,7 +194,10 @@ def node(cx, cy, d, label=None, size=12, bold=False, strong=False, color=None):
     elif st == 'ring':
         rect(cx - d / 2, cy - d / 2, d, d, "FFFFFF", col, 1.5, MSO_SHAPE.OVAL, alpha=80); tc = T['ink']
     else:  # soft
-        rect(cx - d / 2, cy - d / 2, d, d, T['c2l'] if strong else T['c1l'], kind=MSO_SHAPE.OVAL, alpha=70); tc = T['ink']
+        lc = T['c2l'] if strong else T['c1l']
+        if sem == 'S': lc = T['s1l']
+        if sem == 'F': lc = T['s2l']
+        rect(cx - d / 2, cy - d / 2, d, d, lc, kind=MSO_SHAPE.OVAL, alpha=70); tc = T['ink']
     if label is not None:
         txt(cx - d / 2 + 0.08, cy - d / 2, d - 0.16, d, label, size=size, bold=bold, color=color or tc, align='c', anchor='m')
 
@@ -424,8 +433,8 @@ def s_aktual1():
     txt(0.8, 3.85, 11, 0.3, "Хирургическая коррекция смешанного астигматизма", size=13, bold=True, color=T['tcolor'] if T['n'] != 3 else T['acc'])
     hair(0.8, 4.2, 12.5, 4.2)
     hair(3.5, 4.85, 8.8, 4.85)
-    node(3.5, 4.85, 1.4, [[("ФемтоЛАЗИК", {'size': 11, 'bold': True})]], 11)
-    node(8.8, 4.85, 1.4, [[("?", {'size': 28, 'bold': True})]], 12, strong=True)
+    node(3.5, 4.85, 1.4, [[("ФемтоЛАЗИК", {'size': 11, 'bold': True})]], 11, sem='F')
+    node(8.8, 4.85, 1.4, [[("?", {'size': 28, 'bold': True})]], 12, sem='S')
     txt(1.75, 5.75, 3.5, 0.6, [[("Эксимерлазерная технология. Современный ", {}), ("«золотой»", {'bold': True}), (" стандарт в коррекции смешанного астигматизма", {})]], size=10, align='c')
     txt(7.05, 5.75, 3.5, 0.5, [[("Лентикулярная технология", {'bold': True})]], size=11, align='c')
     txt(0.8, 6.55, 11.8, 0.55, ["Азара Д.Т., Алио Х.Л., Кортина М.С., Халлака Д.А. Хирургическое лечение астигматизма. Москва: ГЭОТАР-Медиа, 2025. — 272 с. doi: 10.33029/9704-8200-1-STA-2025-1-272; Shing E. et al. Heritability and Genetic Factors of Astigmatism and Corneal Curvature. Am J Ophthalmol. 2025;269:161–171. doi: 10.1016/j.ajo.2024.08.019; Клокова О.А. и др. Ранние клинико-функциональные результаты коррекции смешанного астигматизма в зависимости от его степени с помощью высокочастотного эксимерного лазера Schwind Amaris 1050RS. Офтальмология. 2025;22(2):295–304. https://doi.org/10.18008/1816-5095-2025-2-295-304"], size=6, italic=True, color=T['mute'], spacing=0.95)
@@ -457,8 +466,8 @@ def s_methods():
     slide("Материалы и методы")
     box(0.65, 1.2, 5.9, 4.2); box(6.75, 1.2, 5.9, 4.2); box(0.65, 5.5, 11.95, 1.5)
     hair(3.9, 2.85, 9.4, 2.85)
-    node(3.9, 2.85, 2.2, [[("SMILE", {'size': 20, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12)
-    node(9.4, 2.85, 2.2, [[("ФемтоЛАЗИК", {'size': 15, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12, strong=True)
+    node(3.9, 2.85, 2.2, [[("SMILE", {'size': 20, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12, sem='S')
+    node(9.4, 2.85, 2.2, [[("ФемтоЛАЗИК", {'size': 15, 'bold': True})], [("20 пациентов", {'size': 11})], [("(40 глаз)", {'size': 11})]], 12, sem='F')
     txt(2.4, 1.35, 3, 0.25, "ГРУППА 1", size=9, bold=True, color=T['mute'], align='c'); txt(7.9, 1.35, 3, 0.25, "ГРУППА 2", size=9, bold=True, color=T['mute'], align='c')
     txt(2.0, 4.55, 3.8, 1.0, [[("Лентикулярная технология (SMILE)", {'bold': True, 'size': 12.5, 'color': T['tcolor'] if T['n'] != 3 else T['acc']})], [("Фемтосекундная лазерная установка VisuMax (Carl Zeiss Meditec AG, Германия)", {'italic': True, 'size': 9.5})]], align='c', spacing=1.1, after=3)
     txt(7.5, 4.55, 3.8, 1.0, [[("Эксимерлазерная технология (ФемтоЛАЗИК)", {'bold': True, 'size': 12.5, 'color': T['tcolor'] if T['n'] != 3 else T['acc']})], [("Интегрированная платформа WaveLight Refractive Suite (WaveLight FS200 + WaveLight EX500, Alcon Laboratories Inc., США)", {'italic': True, 'size': 9.5})]], align='c', spacing=1.1, after=3)
@@ -472,13 +481,13 @@ def s_methods():
 
 def s_ranges():
     slide("Диапазон **рефракционных значений** в исследуемых группах")
-    head(4.0, 1.3, 3.6, "Лентикулярная технология (SMILE)", T['c1'], 12)
-    head(8.2, 1.3, 3.9, "Эксимерлазерная технология (ФемтоЛАЗИК)", T['c2'] if T['n'] != 7 else T['mute'], 12)
+    head(4.0, 1.3, 3.6, "Лентикулярная технология (SMILE)", T['s1t'], 12)
+    head(8.2, 1.3, 3.9, "Эксимерлазерная технология (ФемтоЛАЗИК)", T['s2t'], 12)
     rows = [("Сферический компонент (Sph)", ("от +0,25 до +1,75 D", "M ± SD +0,54 ± 0,39"), ("от +0,25 до +3,00 D", "M ± SD +1,25 ± 0,81")),
             ("Цилиндрический компонент (Cyl)", ("от −2,00 до −5,00 D", "M ± SD −3,07 ± 0,93"), ("от −1,25 до −6,00 D", "M ± SD −3,24 ± 2,03")),
             ("Кератометрия, D", ("K1 41,58 · K2 44,44", "K AVE 43,00"), ("K1 41,69 · K2 44,76", "K AVE 43,22")),
             ("Пахиметрия, мкм", ("от 494 до 615 мкм", "M ± SD 554,1 ± 36,2"), ("от 483 до 596 мкм", "M ± SD 537,1 ± 30,8"))]
-    c2t = T['c2'] if T['n'] not in (5, 7) else T['ink']
+    c2t = T['s2t']
     for i, (lab, a, b) in enumerate(rows):
         y = 1.95 + i * 0.82
         hair(0.8, y - 0.08, 12.5, y - 0.08)
@@ -492,14 +501,14 @@ def s_ranges():
     ch = sl.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, I(gx(0.7)), I(5.6), I(gw(5.6)), I(1.4), cd).chart
     chart_clear(ch); ch.font.name = SANS
     pl = ch.plots[0]; pl.gap_width = 45; pl.overlap = 100
-    for s, c in zip(pl.series, [T['c1'], T['c1l']]): s.format.fill.solid(); s.format.fill.fore_color.rgb = rgb(c)
+    for s, c in zip(pl.series, ["5B6B8C", "BAC4D8"]): s.format.fill.solid(); s.format.fill.fore_color.rgb = rgb(c)
     pl.has_data_labels = True; pl.data_labels.font.size = Pt(10); pl.data_labels.font.bold = True; pl.data_labels.font.color.rgb = rgb("FFFFFF")
     ch.value_axis.visible = False; ch.value_axis.has_major_gridlines = False
     ch.category_axis.tick_labels.font.size = Pt(10); ch.category_axis.format.line.fill.background()
     ch.has_legend = True; ch.legend.position = XL_LEGEND_POSITION.RIGHT; ch.legend.include_in_layout = False; ch.legend.font.size = Pt(9)
     txt(7.4, 5.4, 3, 0.25, "Средний возраст", size=10, bold=True)
-    node(8.4, 6.2, 1.15, [[("31,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10)
-    node(11.0, 6.2, 1.15, [[("29,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, strong=True)
+    node(8.4, 6.2, 1.15, [[("31,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, sem='S')
+    node(11.0, 6.2, 1.15, [[("29,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, sem='F')
     txt(7.6, 6.85, 1.6, 0.2, "SMILE", size=8.5, color=T['mute'], align='c'); txt(10.2, 6.85, 1.6, 0.2, "ФемтоЛАЗИК", size=8.5, color=T['mute'], align='c')
     txt(0.8, 7.02, 6, 0.15, "* M ± SD — среднее ± стандартное отклонение", size=6.5, italic=True, color=T['mute'])
 
@@ -632,10 +641,10 @@ def s_acuity():
     box(0.65, 1.2, 5.9, 5.75); box(6.75, 1.2, 5.9, 5.75)
     cats = ["До операции", "1-е сутки", "3 мес.", "6 мес."]
     vl(6.65, 1.3, 6.65, 6.8)
-    head(0.8, 1.3, 3.6, "Лентикулярная хирургия (SMILE)", T['c1'], 13, fill=T['c1'] if T['n'] == 6 else None)
-    bar_chart(0.7, 1.75, 5.8, 5.1, cats, [("НКОЗ", (0.34, 0.73, 0.88, 0.75)), ("МКОЗ", (0.91, 0.87, 0.98, 1.00))], [T['c1'], T['c1l']], 0, 1.2, 0.2)
-    head(6.95, 1.3, 3.0, "ФемтоЛАЗИК", T['c2'] if T['n'] != 7 else T['ink'], 13, fill=T['c2'] if T['n'] == 6 else None)
-    bar_chart(6.85, 1.75, 5.8, 5.1, cats, [("НКОЗ", (0.32, 0.54, 0.75, 0.72)), ("МКОЗ", (0.87, 0.84, 0.92, 0.95))], [T['c2'], T['c2l']], 0, 1.2, 0.2)
+    head(0.8, 1.3, 3.6, "Лентикулярная хирургия (SMILE)", T['s1t'], 13, fill=T['s1'] if T['n'] == 6 else None)
+    bar_chart(0.7, 1.75, 5.8, 5.1, cats, [("НКОЗ", (0.34, 0.73, 0.88, 0.75)), ("МКОЗ", (0.91, 0.87, 0.98, 1.00))], [T['s1'], T['s1l']], 0, 1.2, 0.2)
+    head(6.95, 1.3, 3.0, "ФемтоЛАЗИК", T['s2t'], 13, fill=T['s2'] if T['n'] == 6 else None)
+    bar_chart(6.85, 1.75, 5.8, 5.1, cats, [("НКОЗ", (0.32, 0.54, 0.75, 0.72)), ("МКОЗ", (0.87, 0.84, 0.92, 0.95))], [T['s2'], T['s2l']], 0, 1.2, 0.2)
     txt(4.6, 1.4, 1.9, 0.25, "острота зрения, дес.", size=8.5, color=T['mute'], align='r')
 
 
@@ -643,8 +652,8 @@ def s_refraction():
     slide("Динамика рефракционного компонента")
     box(0.65, 1.2, 6.9, 5.75); box(7.7, 1.2, 4.95, 5.75)
     cats = ["До операции", "1-е сутки", "3 мес.", "6 мес."]
-    S = [("SMILE — Sph", T['c1'], False, (0.54, 0.22, 0.37, 0.62)), ("SMILE — Cyl", T['c1'], True, (-3.07, -0.51, -0.44, -0.62)),
-         ("ФемтоЛАЗИК — Sph", T['c2'], False, (1.25, -0.20, 0.02, 0.31)), ("ФемтоЛАЗИК — Cyl", T['c2'], True, (-3.24, -1.13, -1.19, -1.25))]
+    S = [("SMILE — Sph", T['s1'], False, (0.54, 0.22, 0.37, 0.62)), ("SMILE — Cyl", T['s1'], True, (-3.07, -0.51, -0.44, -0.62)),
+         ("ФемтоЛАЗИК — Sph", T['s2'], False, (1.25, -0.20, 0.02, 0.31)), ("ФемтоЛАЗИК — Cyl", T['s2'], True, (-3.24, -1.13, -1.19, -1.25))]
     cd = CategoryChartData(number_format='0.00'); cd.categories = cats
     for nm, c, d, v in S: cd.add_series(nm, v)
     ch = sl.shapes.add_chart(XL_CHART_TYPE.LINE_MARKERS, I(gx(0.7)), I(1.4), I(gw(6.6)), I(3.15), cd).chart
@@ -670,7 +679,7 @@ def s_refraction():
     for i, (ttl, a, b, lo, hi, mj, f) in enumerate(small):
         yy = 1.3 + i * 1.85
         txt(8.0, yy, 4, 0.25, ttl, size=11, bold=True)
-        c2 = bar_chart(7.9, yy + 0.2, 4.7, 1.6, ["До операции", "6 мес."], [("SMILE", (a[0], b[0])), ("ФемтоЛАЗИК", (a[1], b[1]))], [T['c1'], T['c2']], lo, hi, mj, fmt=f, legend=(i == 0), lsize=8.5, gap=70)
+        c2 = bar_chart(7.9, yy + 0.2, 4.7, 1.6, ["До операции", "6 мес."], [("SMILE", (a[0], b[0])), ("ФемтоЛАЗИК", (a[1], b[1]))], [T['s1'], T['s2']], lo, hi, mj, fmt=f, legend=(i == 0), lsize=8.5, gap=70)
         c2.value_axis.visible = False; c2.value_axis.has_major_gridlines = False
         if i == 0: c2.legend.position = XL_LEGEND_POSITION.RIGHT
 
@@ -681,7 +690,7 @@ def s_safety():
     pic("p17_270.png", 0.8, 1.5, 9.3, 5.3, frame=(T['card'] in ('none', 'flat')))
     for i, (lab, v, st) in enumerate([("Индекс безопасности SMILE", "1,03", False), ("Индекс безопасности ФемтоЛАЗИК", "1,02", True)]):
         cy = 2.7 + i * 2.7
-        node(11.5, cy, 1.7, v, 24, True, strong=st)
+        node(11.5, cy, 1.7, v, 24, True, sem='F' if st else 'S')
         txt(10.4, cy + 1.2, 2.2, 0.5, lab, size=10, align='c')
 
 
@@ -765,14 +774,14 @@ def _demo():
     ch = sl.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, I(gx(0.7)), I(5.6), I(gw(5.6)), I(1.4), cd).chart
     chart_clear(ch); ch.font.name = SANS
     pl = ch.plots[0]; pl.gap_width = 45; pl.overlap = 100
-    for s, c in zip(pl.series, [T['c1'], T['c1l']]): s.format.fill.solid(); s.format.fill.fore_color.rgb = rgb(c)
+    for s, c in zip(pl.series, ["5B6B8C", "BAC4D8"]): s.format.fill.solid(); s.format.fill.fore_color.rgb = rgb(c)
     pl.has_data_labels = True; pl.data_labels.font.size = Pt(10); pl.data_labels.font.bold = True; pl.data_labels.font.color.rgb = rgb("FFFFFF")
     ch.value_axis.visible = False; ch.value_axis.has_major_gridlines = False
     ch.category_axis.tick_labels.font.size = Pt(10); ch.category_axis.format.line.fill.background()
     ch.has_legend = True; ch.legend.position = XL_LEGEND_POSITION.RIGHT; ch.legend.include_in_layout = False; ch.legend.font.size = Pt(9)
     txt(7.4, 5.4, 3, 0.25, "Средний возраст", size=10, bold=True)
-    node(8.4, 6.2, 1.15, [[("31,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10)
-    node(11.0, 6.2, 1.15, [[("29,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, strong=True)
+    node(8.4, 6.2, 1.15, [[("31,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, sem='S')
+    node(11.0, 6.2, 1.15, [[("29,2", {'size': 16, 'bold': True})], [("года", {'size': 8.5})]], 10, sem='F')
     txt(7.6, 6.85, 1.6, 0.2, "SMILE", size=8.5, color=T['mute'], align='c'); txt(10.2, 6.85, 1.6, 0.2, "ФемтоЛАЗИК", size=8.5, color=T['mute'], align='c')
     txt(0.8, 7.02, 6, 0.15, "* M ± SD — среднее ± стандартное отклонение", size=6.5, italic=True, color=T['mute'])
 
@@ -787,7 +796,7 @@ def s_ranges_tbl():
     kind = MSO_SHAPE.ROUNDED_RECTANGLE if T['n'] in (1, 6) else MSO_SHAPE.RECTANGLE
     rect(0.8, 1.4, 3.1, 0.5, T['c2'] if T['n'] == 4 else T['head_fill'], kind=kind, adj=0.3 if kind != MSO_SHAPE.RECTANGLE else None)
     txt(0.9, 1.4, 2.9, 0.5, "Показатель", size=11.5, bold=True, color="FFFFFF", anchor='m')
-    for (x, w), t, c in zip(cols[1:], ("Лентикулярная технология (SMILE)", "Эксимерлазерная технология (ФемтоЛАЗИК)"), (T['c1'], T['c2'])):
+    for (x, w), t, c in zip(cols[1:], ("Лентикулярная технология (SMILE)", "Эксимерлазерная технология (ФемтоЛАЗИК)"), (T['s1'], T['s2'])):
         rect(x, 1.4, w, 0.5, c, kind=kind, adj=0.3 if kind != MSO_SHAPE.RECTANGLE else None)
         txt(x + 0.1, 1.4, w - 0.2, 0.5, t, size=11.5, bold=True, color="FFFFFF", align='c', anchor='m')
     for i, (lab, a, b) in enumerate(rows):
@@ -795,8 +804,8 @@ def s_ranges_tbl():
         if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else {14: "E9ECF6", 10: "EFEADF", 11: "E6F7F3", 12: "EAF4FD", 13: "F3ECE4"}.get(T['n']) or "F1F6FC" if T['n'] != 3 else "ECF8F5")
         hair(0.8, y + 0.74, 12.5, y + 0.74)
         txt(0.95, y, 2.9, 0.74, lab, size=11.5, bold=True, anchor='m')
-        txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['c1']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
-        txt(8.2, y, 4.3, 0.74, [[(b[0], {'bold': True, 'size': 13, 'color': T['c2']})], [(b[1], {'size': 10.5})]], align='c', anchor='m')
+        txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['s1t']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
+        txt(8.2, y, 4.3, 0.74, [[(b[0], {'bold': True, 'size': 13, 'color': T['s2t']})], [(b[1], {'size': 10.5})]], align='c', anchor='m')
     _demo_shift()
 
 
