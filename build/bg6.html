@@ -1,0 +1,26 @@
+<!doctype html><html><body style="margin:0"><style>.s{position:relative;width:1920px;height:1080px;overflow:hidden}svg{position:absolute;inset:0}</style><div id="root"></div>
+<script>
+const NS='http://www.w3.org/2000/svg';var uid=0;
+function el(p,n,a={}){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+function stage(id,bg){const d=document.createElement('div');d.className='s';d.id=id;d.style.background=bg;document.getElementById('root').appendChild(d);return el(d,'svg',{width:1920,height:1080,viewBox:'0 0 1920 1080'})}
+function blob(s,cx,cy,rx,ry,c,o,sd){const d=el(s,'defs'),id='bb'+(uid++);const f=el(d,'filter',{id,x:'-50%',y:'-50%',width:'200%',height:'200%'});el(f,'feGaussianBlur',{stdDeviation:sd});el(s,'ellipse',{cx,cy,rx,ry,fill:c,opacity:o,filter:`url(#${id})`})}
+function circ(s,cx,cy,r,c,w,o=1){el(s,'circle',{cx,cy,r,fill:'none',stroke:c,'stroke-width':w,opacity:o})}
+// 10 navy/beige/orange
+{let s=stage('th10_title','#262A52');circ(s,1750,170,330,'#E5611F',9);circ(s,170,930,110,'#E5611F',9);circ(s,1930,1010,26,'#E5611F',6);
+ el(s,'rect',{x:0,y:1068,width:1920,height:12,fill:'#E5611F'});
+ s=stage('th10_content','#E3DDD0');el(s,'rect',{x:0,y:1062,width:1920,height:18,fill:'#E5611F'});el(s,'rect',{x:60,y:64,width:1800,height:2,fill:'#262A52',opacity:.35});circ(s,1960,40,140,'#E5611F',7,.9);}
+// 11 teal / navy
+{let s=stage('th11_title','linear-gradient(180deg,#06174A 0%,#08205F 55%,#2F6B94 100%)');
+ for(let i=0;i<70;i++){const x=330+i*18,u=(i-35)/35,h=Math.sqrt(Math.max(0,1-u*u))*330+15;const g=el(s,'rect',{x,y:1080-h,width:5,height:h,fill:'#CFEFF2',opacity:.35+.4*(1-Math.abs(u))});}
+ s=stage('th11_content','linear-gradient(180deg,#E4F7F3,#F4FBF9)');circ(s,1840,70,34,'#0A1F5C',0,0);el(s,'circle',{cx:1855,cy:70,r:20,fill:'#0A1F5C'});el(s,'circle',{cx:1890,cy:70,r:20,fill:'#B7C3CF'});}
+// 12 blue
+{let s=stage('th12_title','linear-gradient(135deg,#04122F,#0A3C8C 70%,#0F63C9)');
+ for(let i=0;i<260;i++){const x=Math.random()*1920,y=500+Math.random()*580,r=Math.random()*3+.8;el(s,'circle',{cx:x,cy:y,r,fill:'#57C8FF',opacity:Math.random()*.7+.1});}
+ for(let k=0;k<22;k++){let d='';for(let x=-50;x<=1970;x+=10){d+=(d?'L':'M')+x+','+(860+k*9+60*Math.sin(x*.004+k*.18))}el(s,'path',{d,fill:'none',stroke:'#4FB8FF',opacity:.18,'stroke-width':1.2})}
+ s=stage('th12_content','#DCEEFC');el(s,'rect',{x:0,y:0,width:1920,height:12,fill:'#0A63D1'});
+ for(let k=0;k<12;k++){let d='';for(let x=-50;x<=1970;x+=10){d+=(d?'L':'M')+x+','+(960+k*12+30*Math.sin(x*.004+k*.2))}el(s,'path',{d,fill:'none',stroke:'#9CC7F3',opacity:.35,'stroke-width':1})}}
+// 13 orange student
+{let s=stage('th13_title','#D45A14');blob(s,1500,540,520,700,'#E8762E',.8,80);
+ for(let k=0;k<14;k++){circ(s,1560,560,300+k*12,'#F29A62',1.2,.5)}
+ s=stage('th13_content','#FBF6F0');for(let k=0;k<12;k++){circ(s,1900,10,60+k*14,'#F4B796',1.2,.55)}}
+</script></body></html>

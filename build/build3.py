@@ -36,9 +36,17 @@ THEMES = [
          acc="D98200", c1="CC7A00", c1l="FFDD8F", c2="3B3B3B", c2l="C9C4B8", card='shadow', cfill="FFFFFF", cline="F3E6C8", node='soft', num='plain', L=0.8, chrome='top-right', head_fill="CC7A00"),
     dict(n=9, name="Template9_Peach-Soft", head=SANS, hbold=False, tsize=27, tcase=None, talign='l', tcolor="6B2E1A", ink="6B2E1A", mute="A27968", hair="F2C9BB",
          acc="C9593B", c1="C9593B", c1l="F8CDBF", c2="6B2E1A", c2l="CDB3A8", card='pill', cfill="FCE6DE", cline=None, node='soft', num='circlesoft', L=0.8, chrome='top-right', head_fill="C9593B"),
+    dict(n=10, name="Template10_Navy-Orange", head=SANS, hbold=True, tsize=24, tcase='upper', talign='l', tcolor="262A52", ink="262A52", mute="6C6A78", hair="C9C2B2",
+         acc="E5611F", c1="262A52", c1l="9A9CB8", c2="E5611F", c2l="F4B79A", card='flat', cfill="F8F5EE", cline=None, node='solid', num='circle', L=0.8, chrome='top-right', head_fill="262A52"),
+    dict(n=11, name="Template11_Mint-Navy", head=SANS, hbold=False, tsize=26, tcase=None, talign='l', tcolor="0A1F5C", ink="1B2D55", mute="6B7FA0", hair="BFE3DC",
+         acc="2E9C8D", c1="0A1F5C", c1l="9FDDD2", c2="3FA89A", c2l="BDE7E0", card='line', cfill="FFFFFF", cline="A9DDD4", node='solid', num='circlesoft', L=0.8, chrome='top-right', head_fill="0A1F5C"),
+    dict(n=12, name="Template12_Blue-Corporate", head=SANS, hbold=True, tsize=25, tcase=None, talign='l', tcolor="0A1E4A", ink="1B2A4A", mute="5C6F94", hair="BFD9F2",
+         acc="0A63D1", c1="0B4AA8", c1l="9CC7F3", c2="0DA2F0", c2l="A5DCFA", card='border', cfill="FFFFFF", cline="BFD9F2", node='solid', num='circle', L=0.8, chrome='top-right', head_fill="0B4AA8"),
+    dict(n=13, name="Template13_Orange-Cream", head=SANS, hbold=False, tsize=26, tcase=None, talign='l', tcolor="C8541C", ink="3A2A22", mute="8C7A70", hair="E5D6CA",
+         acc="D45A14", c1="D45A14", c1l="F4B796", c2="5A4A42", c2l="CFC3BA", card='flat', cfill="EDE5DD", cline=None, node='soft', num='circle', L=0.8, chrome='top-right', head_fill="D45A14"),
 ]
 
-FAM = {8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
+FAM = {10: 'cards', 11: 'cards', 12: 'cards', 13: 'cards', 8: 'cards', 9: 'cards', 1: 'cards', 2: 'aqua', 3: 'lines', 4: 'cards', 5: 'conf', 6: 'cards', 7: 'lines'}
 for _t in THEMES: _t['fam'] = FAM[_t['n']]
 
 SECTIONS = {2: "Актуальность", 3: "Актуальность", 4: "Цель", 5: "Цель и методы", 6: "Цель и методы", 7: "Цель и методы", 8: "Технология", 9: "Технология", 10: "Технология",
@@ -200,7 +208,10 @@ def numlabel(n, x, y, w=0.7, h=0.4, size=None):
 
 
 def head(x, y, w, text, color=None, size=13, h=0.38, fill=None):
-    if T['n'] == 6:
+    if T['n'] == 12:
+        rect(x, y, w, h, T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5)
+        txt(x + 0.1, y, w - 0.2, h, text, size=size - 1, bold=True, color="FFFFFF", align='c', anchor='m')
+    elif T['n'] == 6:
         rect(x, y, w, h, fill or T['c1l'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5)
         txt(x + 0.1, y, w - 0.2, h, text, size=size - 1, bold=True, color="FFFFFF" if fill else T['c2'], align='c', anchor='m')
     else:
@@ -310,6 +321,7 @@ AFF = ["ФГБОУ ВО «Российский университет медиц
 def s_title():
     new('title'); n = T['n']
     if n in (8, 9): return _title89()
+    if n in (10, 11, 12, 13): return _title_dark()
     if n == 1:
         for i, t in enumerate((AUTHOR, FORUM)):
             rect(0.8 + i * 1.75, 0.45, 1.6 + (0.5 if i else 0), 0.32, "FFFFFF", T['hair'], 0.6, MSO_SHAPE.ROUNDED_RECTANGLE, 0.5, raw=True)
@@ -365,6 +377,23 @@ def _title89():
             x = 0.8 + (0 if i == 0 else 3.6)
             rect(x, 5.3, w, 0.42, T['c1l'], kind=MSO_SHAPE.ROUNDED_RECTANGLE, adj=0.5, raw=True); txt(x, 5.3, w, 0.42, t, size=10.5, bold=True, color=T['c2'], align='c', anchor='m', raw=True)
         txt(0.8, 5.95, 8.5, 0.7, [[(COAUTH, {'size': 10})], [(AFF[0], {'size': 8.5, 'color': T['mute']})], [(AFF[1], {'size': 8.5, 'color': T['mute']})]], size=10, spacing=1.15, raw=True)
+
+
+ACC2 = {10: "F27A3A", 11: "9FDDD2", 12: "38C8FF", 13: "FFD9C0"}
+
+
+def _title_dark():
+    n = T['n']; c = ACC2[n]; ctr = n == 12; al = 'c' if ctr else 'l'
+    w = 11.7 if ctr else 9.3
+    first, second = "Современный подход к хирургической коррекции ", "смешанного астигматизма"
+    if n == 10: first, second = first.upper(), second.upper()
+    txt(0.8, 0.35, 6, 0.25, FORUM.upper() if n == 10 else FORUM, size=9, bold=True, color="FFFFFF", raw=True)
+    txt(0.8, 1.7, w, 2.6, [[(first, {}), (second, {'color': c})]], size=34, bold=(n != 11), color="FFFFFF", spacing=1.05, align=al, raw=True)
+    txt(0.8, 4.0, w, 0.6, SUBT, size=17, color="FFFFFF", align=al, raw=True)
+    bx = 0.8 if not ctr else 3.2
+    rect(bx, 5.1, 5.3 if not ctr else 6.9, 0.62, None, "FFFFFF", 1, MSO_SHAPE.ROUNDED_RECTANGLE, 0.5, raw=True)
+    txt(bx + 0.2, 5.1, 5.0 if not ctr else 6.5, 0.62, [[(SPEAKER, {'bold': True})]], size=12.5, color="FFFFFF", anchor='m', align='l' if not ctr else 'c', raw=True)
+    txt(0.8, 5.95, w, 0.9, [[(COAUTH, {'size': 10})], [(AFF[0], {'size': 8.5})], [(AFF[1], {'size': 8.5})]], size=10, color="E6E6EE", spacing=1.15, align=al, raw=True)
 
 
 def s_aktual1():
@@ -571,8 +600,8 @@ def s_model():
         card(x - 0.05, 1.3, 3.8, 2.85)
         pic(im, x, 1.35, 3.7, 2.45); txt(x, 3.82, 3.7, 0.25, cap, size=9.5, align='c', color=T['mute'])
     txt(0.8, 4.4, 11.8, 0.3, "На основании математической модели построена геометрическая (схематическая) модель лентикулы при смешанном астигматизме", size=11.5, bold=True)
-    rect(0.8, 4.9, 7.0, 2.0, T['c2'] if T['n'] in (1, 4, 6, 3, 8, 9) else T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE if T['card'] != 'none' else MSO_SHAPE.RECTANGLE, adj=0.06) if T['n'] in (1, 3, 4, 6, 8, 9) else rect(0.8, 4.9, 7.0, 2.0, "FFFFFF", T['hair'], 0.9)
-    dark = T['n'] in (1, 3, 4, 6, 8, 9)
+    rect(0.8, 4.9, 7.0, 2.0, T['c2'] if T['n'] in (1, 4, 6, 3, 8, 9) else T['c1'], kind=MSO_SHAPE.ROUNDED_RECTANGLE if T['card'] != 'none' else MSO_SHAPE.RECTANGLE, adj=0.06) if T['n'] in (1, 3, 4, 6, 8, 9, 10, 11, 12, 13) else rect(0.8, 4.9, 7.0, 2.0, "FFFFFF", T['hair'], 0.9)
+    dark = T['n'] in (1, 3, 4, 6, 8, 9, 10, 11, 12, 13)
     fc = "FFFFFF" if dark else T['tcolor']; fm = "D5E3F5" if dark else T['mute']
     txt(1.05, 5.0, 6.5, 0.25, "Эмпирическая формула расчёта максимальной толщины лентикулы", size=9.5, bold=True, color=fm)
     txt(1.05, 5.3, 6.5, 0.5, "T(r,θ) = C + A·(r/R)²·cos(2(θ − ось))", size=20, bold=True, color=fc)
@@ -665,6 +694,13 @@ def s_conclusions():
 
 def s_end():
     new('title'); n = T['n']
+    if n in (10, 11, 12, 13):
+        c = ACC2[n]; ctr = n == 12
+        txt(0.8, 2.0, 11.7 if ctr else 8, 1.4, [[('БЛАГОДАРЮ ЗА ВНИМАНИЕ!' if n == 10 else 'Благодарю за внимание!', {})]], size=42, bold=(n != 11), color='FFFFFF', align='c' if ctr else 'l', raw=True)
+        txt(0.8, 3.7, 11.7 if ctr else 8, 0.4, 'anastasianik2403@gmail.com', size=16, color=c, align='c' if ctr else 'l', raw=True)
+        txt(0.8, 4.3, 11.7 if ctr else 8, 0.4, SPEAKER + '  ·  ' + FORUM, size=11, color='E6E6EE', align='c' if ctr else 'l', raw=True)
+        pic('p20_294.png', 4.7 if ctr else 8.6, 5.0 if ctr else 2.2, 3.4 if ctr else 3.9, 2.0 if ctr else 3.3)
+        return
     if n in (8, 9):
         txt(0.8, 2.0, 8, 1.4, 'Благодарю за внимание!', size=42, color=T['tcolor'], raw=True)
         txt(0.8, 3.7, 8, 0.4, 'anastasianik2403@gmail.com', size=15, color=T['acc'], raw=True)
@@ -737,7 +773,7 @@ def s_ranges_tbl():
         txt(x + 0.1, 1.4, w - 0.2, 0.5, t, size=11.5, bold=True, color="FFFFFF", align='c', anchor='m')
     for i, (lab, a, b) in enumerate(rows):
         y = 1.98 + i * 0.78
-        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else "F1F6FC" if T['n'] != 3 else "ECF8F5")
+        if i % 2 == 0: rect(0.8, y, 11.7, 0.74, T['cfill'] if T['n'] in (2, 9) else "FFF3D6" if T['n'] == 8 else {10: "EFEADF", 11: "E6F7F3", 12: "EAF4FD", 13: "F3ECE4"}.get(T['n']) or "F1F6FC" if T['n'] != 3 else "ECF8F5")
         hair(0.8, y + 0.74, 12.5, y + 0.74)
         txt(0.95, y, 2.9, 0.74, lab, size=11.5, bold=True, anchor='m')
         txt(4.0, y, 4.1, 0.74, [[(a[0], {'bold': True, 'size': 13, 'color': T['c1']})], [(a[1], {'size': 10.5})]], align='c', anchor='m')
@@ -762,7 +798,7 @@ def s_steps_v():
     xs = [0.8 + i * 2.37 for i in range(5)]
     tt = T['tcolor'] if n != 3 else T['acc']
     photo_default = True
-    if n in (1, 4, 9):
+    if n in (1, 4, 9, 10, 11):
         for i, (inner, ttl, body) in enumerate(STEPS):
             last = i == 4; x = xs[i]
             card(x, 1.75, 2.25, 3.4)
@@ -774,7 +810,7 @@ def s_steps_v():
             hair(x + 0.18, 2.35, x + 2.07, 2.35, "FFFFFF" if last else T['hair'])
             txt(x + 0.18, 2.5, 1.95, 0.55, ttl, size=12, bold=True, color="FFFFFF" if last else T['tcolor'], spacing=1.0)
             txt(x + 0.18, 3.15, 1.95, 1.9, body, size=10, color=fg, spacing=1.08, after=3)
-    elif n == 6:
+    elif n in (6, 12):
         for i, (inner, ttl, body) in enumerate(STEPS):
             x = xs[i]
             rect(x, 1.7, 2.45, 0.62, T['c1'] if i == 4 else T['c1l'], kind=MSO_SHAPE.PENTAGON if i == 0 else MSO_SHAPE.CHEVRON)
@@ -814,7 +850,7 @@ def build(theme):
     global T, prs, PAGE
     T = theme; PAGE = 0
     prs = Presentation(); prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
-    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6, 8, 9) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
+    s_title(); s_aktual1(); s_aktual2(); s_goal(); s_methods(); (s_ranges_tbl() if T['n'] in (1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13) else s_ranges()); s_diag(); s_steps_v(); s_operation(); s_patent(); s_criteria()
     s_p_smile(); s_p_fl(); s_model(); s_acuity(); s_refraction(); s_safety(); s_predict(); s_conclusions(); s_end()
     os.makedirs("../presentations", exist_ok=True)
     out = f"../presentations/{theme['name']}.pptx"
